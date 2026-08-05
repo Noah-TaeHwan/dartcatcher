@@ -10,10 +10,14 @@
 
 README의 모든 수치에는 `evidence/` 나 `data/` 에 근거 파일이 붙어 있다. 문서의
 숫자를 고치는 변경은 그 숫자가 나온 실행 출력을 함께 제출해야 한다. 반대로 근거
-파일을 갱신하면 README의 해당 수치도 같이 고쳐야 한다.
+파일을 갱신하면 README의 해당 수치도 같이 고쳐야 한다. 이건 새 수치를 추가할
+때도 똑같이 지켜야 하는, 이 저장소 전체의 원칙이다.
 
-이건 예의가 아니라 **CI가 강제하는 규칙**이다. 한쪽만 바뀌면 `evidence` 잡이
-빨간불이 된다.
+다만 CI가 기계적으로 강제하는 범위는 이 원칙 전체가 아니라 `tools/check_evidence.py`
+에 하드코딩된 8개 항목(OCR 정확도 2건, 캡처 해상도 2건, 캡처 크기 2건, 크롤
+유니크 접수번호 1건, 산출물 개수 1건)뿐이다. 이 목록에 없는 새 수치를 README에
+추가했다면 이 파일에 대응하는 검사를 함께 추가해야 CI가 지켜준다. 추가하지
+않으면 그 수치는 원칙상으로만 유효할 뿐 `evidence` 잡의 보호를 받지 못한다.
 
 ```bash
 python3 tools/check_evidence.py
@@ -25,7 +29,19 @@ python3 tools/check_evidence.py
 
 ## 푸시 전에 돌릴 것
 
-CI가 검사하는 것과 같은 명령이다. `pip install` 없이 돈다.
+CI가 검사하는 것과 같은 명령이다. 이 중 `check_evidence.py` 와
+`check_links.py` 는 표준 라이브러리만 쓰므로 아무것도 설치하지 않아도 그대로
+돈다. `ruff` 와 `shellcheck` 는 이 저장소 밖의 별도 도구라 먼저 설치해야
+한다. CI는 실행할 때마다 새 컨테이너에 그 둘을 설치할 뿐이지, 로컬 설치를
+대신해주지는 않는다.
+
+```bash
+python3 -m pip install ruff   # CI(.github/workflows/ci.yml)와 같은 설치 명령.
+                               # "externally-managed-environment" 오류가 나면
+                               # pipx install ruff 를 대신 쓴다
+brew install shellcheck       # macOS. Linux는 배포판 패키지 관리자로 설치한다
+                               # (예: apt install shellcheck)
+```
 
 ```bash
 python3 tools/check_evidence.py   # README 수치와 근거 대조
