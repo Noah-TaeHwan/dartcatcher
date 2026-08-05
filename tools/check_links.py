@@ -28,6 +28,7 @@ TARGET_DOCS = [
     "api/README.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
+    "CHANGELOG.md",
 ]
 
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
@@ -42,13 +43,16 @@ FENCE_PATTERN = re.compile(r"^\s*(```|~~~)")
 ANCHOR_STRIP = re.compile(r"[^\w\s\-가-힣]", re.UNICODE)
 
 
-def strip_code_fences(text: str) -> str:
+def strip_code_fences(text: str) -> tuple[str, bool]:
     """코드 펜스 내부를 빈 줄로 바꿔 검사 대상에서 제외한다.
 
-    줄 번호를 유지하려고 삭제 대신 빈 줄로 치환한다.
+    줄 번호를 유지하려고 삭제 대신 빈 줄로 치환한다. 펜스 마커 개수가 홀수면
+    문서 끝까지 `inside` 가 True로 남아 뒤의 내용이 전부 조용히 비워진다.
+    호출자가 이 상태를 알아채고 실패로 처리할 수 있도록 닫히지 않은 펜스
+    여부를 함께 돌려준다.
 
     :param text: 마크다운 원문
-    :returns: 펜스 내부가 비워진 문자열
+    :returns: (펜스 내부가 비워진 문자열, 문서 끝까지 펜스가 닫히지 않았는지 여부)
     """
     lines = text.split("\n")
     result: list[str] = []
@@ -59,7 +63,7 @@ def strip_code_fences(text: str) -> str:
             result.append("")
             continue
         result.append("" if inside else line)
-    return "\n".join(result)
+    return "\n".join(result), inside
 
 
 def anchor_slug(heading: str) -> str:
@@ -73,14 +77,14 @@ def anchor_slug(heading: str) -> str:
     return slug.replace(" ", "-")
 
 
-def extract_headings(path: Path) -> set[str]:
+def extract_headings(path: Path) -> tuple[set[str], bool]:
     """문서 파일 하나의 헤딩 앵커 슬러그 집합을 만든다.
 
     :param path: 마크다운 파일의 절대 경로
-    :returns: 그 문서에 존재하는 앵커 슬러그 집합
+    :returns: (그 문서에 존재하는 앵커 슬러그 집합, 문서 끝까지 펜스가 닫히지 않았는지 여부)
     """
-    body = strip_code_fences(path.read_text(encoding="utf-8"))
-    return {anchor_slug(m.group(2)) for m in HEADING_PATTERN.finditer(body)}
+    body, unclosed = strip_code_fences(path.read_text(encoding="utf-8"))
+    return {anchor_slug(m.group(2)) for m in HEADING_PATTERN.finditer(body)}, unclosed
 
 
 def check_document(relative: str) -> list[str]:
@@ -94,11 +98,19 @@ def check_document(relative: str) -> list[str]:
         return [f"{relative}: 문서가 없습니다."]
 
     raw = path.read_text(encoding="utf-8")
-    body = strip_code_fences(raw)
+    body, unclosed = strip_code_fences(raw)
+    problems: list[str] = []
+    if unclosed:
+        # 펜스가 닫히지 않으면 그 뒤 전체가 빈 줄로 치환돼 검사 대상에서
+        # 조용히 빠진다. 통과가 아니라 이 문서의 실패로 명시해야 한다.
+        problems.append(
+            f"{relative}: 코드 펜스(```/~~~)가 닫히지 않은 채 문서가 끝났습니다. "
+            "그 뒤 내용은 검사 대상에서 빠집니다."
+        )
+
     # 헤딩도 펜스를 걷어낸 본문에서 찾는다. 셸 예제의 주석 줄(`# ...`)이 헤딩으로
     # 잡히면 실재하지 않는 앵커가 유효한 것처럼 통과해버린다.
-    headings = extract_headings(path)
-    problems: list[str] = []
+    headings, _ = extract_headings(path)  # 닫히지 않은 펜스는 위에서 이미 보고했다.
 
     for label, target in LINK_PATTERN.findall(body) + NESTED_LINK_PATTERN.findall(body):
         if target.startswith(("http://", "https://", "mailto:")):
@@ -117,7 +129,26 @@ def check_document(relative: str) -> list[str]:
             # 다른 문서를 가리키는 링크의 앵커는 그 문서 자신의 헤딩과 대조해야 한다.
             # 대상이 마크다운이 아니면(예: evidence 텍스트 파일) 앵커 개념이 없으므로
             # 검사하지 않는다.
-            anchor_headings = extract_headings(resolved) if resolved.suffix == ".md" else None
+            if resolved.suffix == ".md":
+                anchor_headings, resolved_unclosed = extract_headings(resolved)
+                if resolved_unclosed:
+                    # 대상 문서 자체의 펜스 문제라 이 문서(relative)의 링크가
+                    # 잘못됐다고 오판(혹은 오탐 통과)하지 않도록 원인을 밝혀
+                    # 명시적으로 실패시킨다. 대상 문서가 TARGET_DOCS 밖이면
+                    # 자신의 검사 차례에서 따로 걸러지지 않으므로 여기서
+                    # 조용히 넘어가면 안 된다.
+                    resolved_display = (
+                        resolved.relative_to(REPO_ROOT)
+                        if resolved.is_relative_to(REPO_ROOT)
+                        else resolved
+                    )
+                    problems.append(
+                        f"{relative}: [{label}]({target}) 이 가리키는 {resolved_display} "
+                        "에서 코드 펜스가 닫히지 않아 앵커를 확인할 수 없습니다."
+                    )
+                    continue
+            else:
+                anchor_headings = None
 
         if anchor_part and anchor_headings is not None and anchor_part not in anchor_headings:
             problems.append(

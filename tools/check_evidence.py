@@ -31,7 +31,9 @@ import struct
 import sys
 from pathlib import Path
 
+# 이 파일(tools/check_evidence.py) 기준으로 저장소 루트를 찾는다.
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# 근거와 대조할 대상 문서. 이 저장소는 루트 README 하나만 검사한다.
 README_PATH = REPO_ROOT / "README.md"
 
 # PNG 파일 시그니처. IHDR 청크에서 해상도를 읽기 전에 이것부터 확인한다.
@@ -51,16 +53,20 @@ class CheckError(RuntimeError):
     """근거 파일이 없거나 형식이 어긋나 수치를 파생할 수 없는 경우의 예외."""
 
 
-def strip_code_fences(text: str) -> str:
+def strip_code_fences(text: str) -> tuple[str, bool]:
     """코드 펜스 내부를 빈 줄로 바꿔 검사 대상에서 제외한다.
 
     README의 콘솔 발췌는 이 검사기 자신이 출력하는 문구를 그대로 담고 있을 수
     있다. 그런 발췌는 예시일 뿐 문서의 주장이 아니므로, 펜스 밖 프로즈에서만
     파생값을 찾아야 발췌가 실제 수치 오류를 가려주는 구멍이 되지 않는다.
-    줄 번호를 유지하려고 삭제 대신 빈 줄로 치환한다.
+    줄 번호를 유지하려고 삭제 대신 빈 줄로 치환한다. 펜스 마커 개수가 홀수면
+    문서 끝까지 `inside` 가 True로 남아 뒤의 내용이 전부 조용히 비워지는데,
+    그러면 대조할 프로즈 자체가 사라져 이 검사기가 조용히 통과해버릴 수 있다.
+    호출자가 이 상태를 알아채고 실패로 처리할 수 있도록 닫히지 않은 펜스
+    여부를 함께 돌려준다.
 
     :param text: 마크다운 원문
-    :returns: 펜스 내부가 비워진 문자열
+    :returns: (펜스 내부가 비워진 문자열, 문서 끝까지 펜스가 닫히지 않았는지 여부)
     """
     lines = text.split("\n")
     result: list[str] = []
@@ -71,7 +77,7 @@ def strip_code_fences(text: str) -> str:
             result.append("")
             continue
         result.append("" if inside else line)
-    return "\n".join(result)
+    return "\n".join(result), inside
 
 
 def read_evidence(relative: str) -> str:
@@ -216,7 +222,18 @@ def main() -> int:
         return 1
 
     # 코드 펜스 안쪽(콘솔 발췌 등)은 프로즈가 아니므로 대조에서 제외한다.
-    readme = strip_code_fences(README_PATH.read_text(encoding="utf-8"))
+    readme, unclosed = strip_code_fences(README_PATH.read_text(encoding="utf-8"))
+    if unclosed:
+        # 펜스가 닫히지 않으면 그 뒤 프로즈가 전부 빈 줄로 치환돼, 진짜로
+        # 수치가 있어도 대조가 실패하거나 반대로 우연히 통과할 수 있다.
+        # 값을 하나씩 대조하는 대신 이 시점에 바로 실패로 끝낸다.
+        print("[실패] README.md 의 코드 펜스가 닫히지 않은 채 문서가 끝났습니다.", file=sys.stderr)
+        print(
+            "  그 뒤 프로즈가 전부 검사 대상에서 빠져 근거 대조를 신뢰할 수 없습니다.",
+            file=sys.stderr,
+        )
+        return 1
+
     failures: list[tuple[str, str]] = []
 
     print(f"근거 대조 {len(checks)}건")
