@@ -29,6 +29,10 @@ TARGET_DOCS = [
 ]
 
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
+# 이미지 배지를 링크로 감싼 `[![alt](img)](target)` 형태는 `[^\]]*` 가 첫 `]`에서
+# 멈추는 LINK_PATTERN 만으로는 바깥쪽 target 을 못 잡는다. 뱃지 줄의 실제 목적지를
+# 보려면 이 패턴을 따로 둬야 한다.
+NESTED_LINK_PATTERN = re.compile(r"\[!\[([^\]]*)\]\([^)]*\)\]\(([^)]+)\)")
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 FENCE_PATTERN = re.compile(r"^\s*(```|~~~)")
 
@@ -84,7 +88,7 @@ def check_document(relative: str) -> list[str]:
     headings = {anchor_slug(m.group(2)) for m in HEADING_PATTERN.finditer(body)}
     problems: list[str] = []
 
-    for label, target in LINK_PATTERN.findall(body):
+    for label, target in LINK_PATTERN.findall(body) + NESTED_LINK_PATTERN.findall(body):
         if target.startswith(("http://", "https://", "mailto:")):
             continue
 
