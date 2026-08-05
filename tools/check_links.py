@@ -121,7 +121,7 @@ def check_document(relative: str) -> list[str]:
 
         if anchor_part and anchor_headings is not None and anchor_part not in anchor_headings:
             problems.append(
-                f"{relative}: [{label}](#{anchor_part}) 에 해당하는 헤딩이 없습니다."
+                f"{relative}: [{label}]({target}) 에 해당하는 헤딩이 없습니다."
             )
 
     return problems
