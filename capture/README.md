@@ -2,7 +2,7 @@
 
 DART 전자공시시스템 페이지를 헤드리스 브라우저로 접속해 **전체 페이지 스크린샷**을
 PNG로 남기는 모듈이다. 실행 환경은 Microsoft가 배포하는 공식 Playwright 파이썬
-이미지를 그대로 쓰고, 호스트에는 아무것도 설치하지 않는다.
+이미지를 그대로 쓰고 호스트에는 아무것도 설치하지 않는다.
 
 ## 왜 Playwright인가
 
@@ -14,10 +14,10 @@ PNG로 남기는 모듈이다. 실행 환경은 Microsoft가 배포하는 공식
 
 대안 비교:
 
-- **Selenium** — 드라이버(chromedriver 등)와 브라우저 버전을 따로 맞춰야 하고, 공식
+- **Selenium**: 드라이버(chromedriver 등)와 브라우저 버전을 따로 맞춰야 하고 공식
   이미지에 브라우저가 번들되지 않아 컨테이너 구성이 길어진다. 전체 페이지 캡처도
   기본 제공이 아니라 스크롤·합성을 직접 구현하거나 별도 확장을 써야 한다.
-- **browserless** — 브라우저를 별도 서비스로 띄우고 HTTP/WebSocket으로 붙는 방식이라
+- **browserless**: 브라우저를 별도 서비스로 띄우고 HTTP/WebSocket으로 붙는 방식이라
   캡처 하나 뜨자고 상시 서비스를 운영해야 한다. 이 모듈처럼 단발성 배치로 돌리는
   용도에는 구성 비용이 더 크다.
 
@@ -44,7 +44,7 @@ PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 따라서 실행 시 `pip install playwright==1.62.0` 한 줄이 필요하다. 다만
 `PLAYWRIGHT_BROWSERS_PATH` 가 이미 설정돼 있어 **`playwright install` (브라우저
-다운로드)은 필요 없다** — 번들된 브라우저를 그대로 찾아 쓴다. 이미지 태그와 pip
+다운로드)은 필요 없다**. 번들된 브라우저를 그대로 찾아 쓴다. 이미지 태그와 pip
 패키지 버전을 `1.62.0` 으로 동일하게 맞춰 버전 불일치를 방지한다.
 
 ## 실행 방법
@@ -58,9 +58,9 @@ docker run --rm \
   bash -c "pip install --quiet --root-user-action=ignore playwright==1.62.0 && python capture/capture.py"
 ```
 
-- `-v "$PWD":/work` — 저장소를 컨테이너의 `/work` 에 마운트해 결과 PNG가 호스트에
+- `-v "$PWD":/work` 는 저장소를 컨테이너의 `/work` 에 마운트해 결과 PNG가 호스트에
   그대로 떨어지게 한다. (macOS Docker Desktop 기준 산출물은 호스트 사용자 소유로 생성됨을 확인함)
-- `--rm` — 실행이 끝나면 컨테이너를 제거한다. 상태는 마운트된 파일로만 남는다.
+- `--rm` 은 실행이 끝나면 컨테이너를 제거한다. 상태는 마운트된 파일로만 남는다.
 
 폴백 대상만 캡처하려면 `python capture/capture.py --fallback-only` 로 바꿔 실행한다.
 
@@ -97,7 +97,7 @@ docker run --rm \
 | `data/captures/<UTC타임스탬프>_quotes-toscrape.png` | 폴백 대상 전체 페이지(폴백 경로 검증 시 생성) |
 | `data/captures/<UTC타임스탬프>_run.json` | 실행 로그(URL, HTTP 상태, 제목, 파일 크기, 실패 사유) |
 
-타임스탬프 형식은 `20260805T003628Z` (UTC)이며, 한 번의 실행에서 나온 파일은 같은
+타임스탬프 형식은 `20260805T003628Z` (UTC)이며 한 번의 실행에서 나온 파일은 같은
 타임스탬프를 공유한다.
 
 ## 대상 사이트 부하 정책
@@ -105,7 +105,7 @@ docker run --rm \
 - 1순위 대상은 DART 메인·공시통합검색 **2개 페이지, 각 1회씩만** 접속한다.
 - 요청 사이에 `REQUEST_INTERVAL_SEC = 3.0` 초 대기를 넣었다.
 - 1순위가 모두 실패할 때만 폴백 대상(`https://quotes.toscrape.com`, 크롤링 실습용
-  공개 사이트)으로 전환하며, 실패 사유는 `_run.json` 의 `error` 필드에 기록된다.
+  공개 사이트)으로 전환하며 실패 사유는 `_run.json` 의 `error` 필드에 기록된다.
   **실제 실행에서는 DART 접속이 성공해 폴백이 발동하지 않았다.**
 
 ### 폴백 경로 검증
