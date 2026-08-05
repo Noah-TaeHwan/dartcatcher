@@ -193,6 +193,10 @@ def main() -> int:
             failures.append((name, derived))
 
     if failures:
+        # 표준출력이 파이프·파일로 리다이렉트되면 블록 버퍼링되어 표준에러보다
+        # 늦게 화면에 나타난다. 위에서 출력한 검사 목록이 실패 요약보다
+        # 먼저 보이도록 첫 표준에러 출력 전에 명시적으로 비운다.
+        sys.stdout.flush()
         print("", file=sys.stderr)
         print(
             f"[실패] 근거에서 파생한 값이 README에 없습니다({len(failures)}건).",
