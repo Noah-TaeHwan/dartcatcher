@@ -1,23 +1,68 @@
 # dartcatcher
 
-웹 페이지를 **크롤링**하고, 렌더링된 화면을 **캡처**하고, 그 이미지 속 글자를 **OCR** 로
-뽑아내는 3단계 금융 데이터 수집 파이프라인. 세 단계 모두 기성 Docker 이미지를 조합해
-구성했고, 호스트에는 아무 런타임도 설치하지 않는다.
+**크롤 → 캡처 → OCR.** 금융감독원 전자공시시스템(DART)의 공개 공시를 세 가지 방식으로
+수집하는 파이프라인. 세 단계 모두 기성 Docker 이미지를 조합했고, 호스트에는 아무 런타임도
+설치하지 않는다.
 
-수집 대상은 금융감독원 전자공시시스템(DART)의 공개 공시 목록이다.
+<sub>A three-stage financial-disclosure collection pipeline — crawl, screenshot, OCR — assembled entirely from off-the-shelf Docker images.</sub>
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Python](https://img.shields.io/badge/Python-3.13%20stdlib--only-3776AB?logo=python&logoColor=white)](#빠른-시작)
+[![crawl4ai](https://img.shields.io/badge/crawl4ai-0.9.2-FF6C37)](crawler/README.md)
+[![Playwright](https://img.shields.io/badge/Playwright-v1.62.0-2EAD33?logo=playwright&logoColor=white)](capture/README.md)
+[![tesseract](https://img.shields.io/badge/tesseract-5.5.2-5A5A5A)](ocr/README.md)
+
+<p align="center">
+  <img src="data/captures/20260805T003628Z_dart-search.png" alt="Playwright 컨테이너로 캡처한 DART 공시통합검색 전체 페이지" width="760">
+</p>
+
+<p align="center">
+  <sub>2단계 산출물 — DART 공시통합검색 전체 페이지 캡처(1444×1252). 3단계 OCR 정확도도 이 화면을 기준으로 측정했다.</sub>
+</p>
+
+## 결과 한눈에
+
+| 단계 | 실측 결과 | 근거 |
+| --- | --- | --- |
+| 1. 크롤 | 공시 목록 3페이지에서 접수번호 기준 **45건**, 페이지 간 중복 0, 전부 HTTP 200 | [`data/crawl/dart_summary.json`](data/crawl/dart_summary.json) · [`evidence/crawl_run.txt`](evidence/crawl_run.txt) |
+| 2. 캡처 | 전체 페이지 PNG **1444×2469 / 1444×1252**, 폰트 추가 설치 없이 한글 정상 렌더링 | [`data/captures/`](data/captures/) |
+| 3. OCR | 한국어 정확 일치 **61.3%** (38/62) · 영어 인용문 **10/10**, 저자명 **8/8** | [`evidence/ocr_quality.txt`](evidence/ocr_quality.txt) |
+| 개선 실험 | 캡처 해상도 2배(`device_scale_factor=2`)로 재측정 시 **61.3% → 83.9%** — 1페이지 1회 측정이라 일반화는 **미검증** | [`evidence/ocr_quality_hidpi_experiment.txt`](evidence/ocr_quality_hidpi_experiment.txt) |
+| 실행 | 3단계 순차 실행 **1분 58초 ~ 5분 2초** (이미지를 이미 받아둔 상태. OCR이 누적된 PNG를 전부 다시 처리해 실행마다 달라진다) | [`evidence/pipeline_run.txt`](evidence/pipeline_run.txt) |
+
+문서의 모든 수치는 2026-08-05 (KST) macOS arm64 / Docker 29.6.2 환경에서 실제로 실행한
+결과이며, 출력 원문은 [`evidence/`](evidence/) 에 그대로 남겨두었다.
+
+## 목차
+
+- [개요](#개요)
+- [아키텍처](#아키텍처)
+- [빠른 시작](#빠른-시작)
+- [결과](#결과)
+- [각 단계 동작](#각-단계-동작)
+- [품질과 한계](#품질과-한계)
+- [크롤링 윤리](#크롤링-윤리)
+- [공식 API 대안](#공식-api-대안)
+- [로드맵](#로드맵)
+- [저장소 구조](#저장소-구조)
+- [라이선스](#라이선스)
 
 ## 개요
 
 수집 계층을 직접 만들면 헤드리스 브라우저 설치, 브라우저·드라이버 버전 정합, 리눅스 폰트와
 그래픽 의존성, OCR 엔진 빌드까지 전부 떠안게 된다. 그 중 어느 것도 이 프로젝트가 풀려는
 문제가 아니다. 그래서 **각 단계에서 이미 잘 만들어진 이미지를 가져다 쓰고, 그 이미지들이
-채워주지 않는 틈만 코드로 메우는** 방식을 택했다. 직접 쓴 코드는 각 이미지를 호출하는 얇은
-실행 스크립트와, 이미지가 막아서거나 빠뜨린 부분을 메우는 우회로 세 개다 — crawl4ai가
-`js_code` 를 금지해 돌아가야 했던 목록 엔드포인트 직접 호출, Playwright 이미지에 pip
-패키지가 빠져 있어 붙인 설치 한 줄, 그리고 tesseract 이미지에 한국어 모델이 없어 만든
-학습 데이터 주입 경로다. 조합의 이점은 컨테이너를 지우면 흔적이 남지 않는다는 것이고,
-비용은 이미지가 안 해주는 일을 만났을 때 우회로를 직접 찾아야 한다는 것이다. 이 문서는
-그 우회로들을 성공 사례와 함께 실패 기록으로도 남긴다.
+채워주지 않는 틈만 코드로 메우는** 방식을 택했다.
+
+직접 쓴 코드는 각 이미지를 호출하는 얇은 실행 스크립트와, 이미지가 막아서거나 빠뜨린 부분을
+메우는 우회로 세 개다 — crawl4ai가 `js_code` 를 금지해 돌아가야 했던 목록 엔드포인트 직접
+호출, Playwright 이미지에 pip 패키지가 빠져 있어 붙인 설치 한 줄, tesseract 이미지에 한국어
+모델이 없어 만든 학습 데이터 주입 경로다.
+
+조합의 이점은 컨테이너를 지우면 흔적이 남지 않는다는 것이고, 비용은 이미지가 안 해주는 일을
+만났을 때 우회로를 직접 찾아야 한다는 것이다. 이 문서는 그 우회로들을 성공 사례와 함께
+**실패 기록으로도** 남긴다.
 
 ## 아키텍처
 
@@ -25,24 +70,24 @@
 flowchart LR
     subgraph S1["1. 크롤"]
         direction TB
-        C1["crawl4ai 컨테이너<br/>REST API :11235"]
         C2["crawler/crawl_dart.py"]
+        C1["crawl4ai 컨테이너<br/>REST API :11235"]
         C2 -->|"POST /crawl"| C1
         C1 -->|"렌더링된 HTML"| C2
     end
 
     subgraph S2["2. 캡처"]
         direction TB
-        P1["Playwright 컨테이너<br/>Chromium 번들"]
         P2["capture/capture.py"]
-        P2 -->|"page.screenshot"| P1
+        P1["Playwright 컨테이너<br/>Chromium 번들"]
+        P2 -->|"page.screenshot / full_page"| P1
     end
 
     subgraph S3["3. OCR"]
         direction TB
-        O1["tesseract 컨테이너<br/>-l kor+eng"]
         O2["ocr/run_ocr.py"]
-        O2 -->|"이미지 입력"| O1
+        O1["tesseract 컨테이너<br/>-l kor+eng"]
+        O2 -->|"PNG 입력"| O1
     end
 
     WEB(["DART<br/>dart.fss.or.kr"]) --> S1
@@ -62,28 +107,6 @@ flowchart LR
 접수번호)를 얻고, 캡처는 **사람이 보는 화면 그대로**를 남긴다. OCR은 그 화면을 다시
 텍스트로 되돌려, 구조화된 수집 경로가 닿지 못하는 표면(이미지로 그려진 표, 스캔 문서)에
 대비한 경로를 만든다.
-
-## 사용한 Docker 이미지
-
-| 이미지 | 제작자 | 역할 | 선택 이유 |
-| --- | --- | --- | --- |
-| `unclecode/crawl4ai:latest` | crawl4ai (unclecode) | 헤드리스 브라우저로 페이지를 렌더링해 마크다운으로 변환하는 REST API 서버 | JS 렌더링과 본문 추출·마크다운 변환을 한 이미지에서 끝낸다. REST 서버 모드를 기본 제공해 수집 계층을 언어 중립적으로 분리할 수 있다. Splash는 출력이 HTML/PNG 수준이라 본문 추출을 따로 붙여야 했다. |
-| `mcr.microsoft.com/playwright/python:v1.62.0-noble` | Microsoft | 브라우저 자동화·전체 페이지 스크린샷 | Playwright 배포사가 직접 유지보수하고 릴리스마다 같은 버전 태그가 올라와 런타임/라이브러리 버전을 고정할 수 있다. Chromium·폰트·그래픽 의존성이 번들돼 `apt-get` 단계가 통째로 사라진다. Selenium은 드라이버·브라우저 버전을 따로 맞춰야 한다. |
-| `jitesoft/tesseract-ocr:5.5.2` | Jitesoft | 이미지에서 텍스트 추출 | tesseract는 공식 이미지를 내지 않아 서드파티 중에서 골랐다. 5.x LSTM 엔진 최신 계열을 따라가고 패치 단위 태그(`5.5.2`)로 고정 가능하며, arm64/amd64 멀티아치라 애플 실리콘에서 에뮬레이션 없이 돈다. |
-
-크기(측정 환경: Docker 29.6.2, macOS arm64). `docker images` 와 `docker image inspect` 가
-서로 다른 값을 보고하는데, 어느 쪽이 디스크 실사용량인지는 확인하지 못해 둘 다 적는다.
-
-| 이미지 | `docker images` | `inspect .Size` |
-| --- | --- | --- |
-| crawl4ai | 9.06GB | 약 2.2GB |
-| playwright/python | 3.77GB | — |
-| tesseract-ocr | 387MB | 약 123MB |
-
-각 단계의 상세 근거·실패 기록은 하위 문서에 있다:
-[`crawler/README.md`](crawler/README.md) ·
-[`capture/README.md`](capture/README.md) ·
-[`ocr/README.md`](ocr/README.md)
 
 ## 빠른 시작
 
@@ -117,7 +140,8 @@ bash run_pipeline.sh --skip-crawl     # 이미 수집한 결과가 있을 때 2�
 bash run_pipeline.sh --stop-crawler   # 끝나고 crawl4ai 컨테이너까지 정리
 ```
 
-실제 실행 출력(전체는 [`evidence/pipeline_run.txt`](evidence/pipeline_run.txt)):
+<details>
+<summary><b>실제 실행 출력 펼쳐보기</b> (전체는 <code>evidence/pipeline_run.txt</code>)</summary>
 
 ```
 ════════════════════════════════════════════
@@ -151,12 +175,15 @@ bash run_pipeline.sh --stop-crawler   # 끝나고 crawl4ai 컨테이너까지 �
 ```
 
 3단계 전체 **5분 2초** (이미지를 이미 받아둔 상태, `time bash run_pipeline.sh --stop-crawler`
-실측). 앞선 실행에서는 같은 3단계가 **1분 58초** 였는데, 차이는 거의 전부 OCR 단계에서 나온다.
-OCR은 `data/captures/` 에 쌓인 **모든** PNG를 다시 처리하므로 실행을 반복할수록 느려진다
-(위 실행은 7장). 재실행 시 산출물이 쌓이는 문제는 "한계" 절에 적어두었다.
+실측). 앞선 실행에서는 같은 3단계가 **1분 58초** 였는데, 차이는 거의 전부 OCR 단계에서
+나온다. OCR은 `data/captures/` 에 쌓인 **모든** PNG를 다시 처리하므로 실행을 반복할수록
+느려진다(위 실행은 7장). 재실행 시 산출물이 쌓이는 문제는 [품질과 한계](#품질과-한계) 절에
+적어두었다.
 
 위 로그의 PNG·텍스트 개수(7개)는 그 시점에 누적돼 있던 파일 수다. 저장소에는 기준 실행과
 최종 검증 실행만 남겨 정리했으므로 현재는 5개씩 들어 있다.
+
+</details>
 
 ### Docker Compose로 돌리기
 
@@ -178,7 +205,8 @@ printf 'CRAWL4AI_API_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env && chmod 600 .
 `crawl4ai(healthy) → crawl(정상종료) → capture(정상종료) → ocr` 순으로 실행된다.
 실제 로그로 이 순서를 확인했다([`evidence/compose_run.txt`](evidence/compose_run.txt)).
 
-#### compose와 스크립트, 왜 둘 다 있나
+<details>
+<summary><b>compose와 스크립트, 왜 둘 다 있나</b></summary>
 
 compose는 **의존성과 실행 순서를 선언**하는 데 뛰어나고, 실제로 4단계 사슬 전체를
 compose만으로 돌리는 데 성공했다. 다만 스크립트를 없애지는 않았다. 이유는 셋이다.
@@ -201,7 +229,9 @@ compose만으로 돌리는 데 성공했다. 다만 스크립트를 없애지는
 억지로 한쪽에 몰아넣지 않고, compose는 "이 파이프라인이 어떤 서비스로 구성되는가"의
 선언으로, 스크립트는 "한 번 제대로 돌리는" 실행 경로로 쓴다.
 
-## 실제 산출물 예시
+</details>
+
+## 결과
 
 ### 1단계 — 크롤 (`data/crawl/dart_page1.md`)
 
@@ -268,7 +298,70 @@ crawl4ai가 렌더링한 공시 목록을 마크다운 표로 변환한 결과. 
 글자 자체보다 주변 렌더링에 흔들린다는 뜻이라, **같은 문자열이라도 위치에 따라 결과가
 달라질 수 있다고 보고 써야 한다.** 무엇이 이 차이를 만드는지는 아직 규명하지 못했다.
 
-정량 평가는 아래 "한계" 절과 [`ocr/README.md`](ocr/README.md) 참고.
+정량 평가는 [품질과 한계](#품질과-한계) 절과 [`ocr/README.md`](ocr/README.md) 참고.
+
+## 각 단계 동작
+
+세 단계 모두 **얇은 파이썬 스크립트 + 기성 이미지** 조합이다. 각 단계에서 왜 그 이미지를
+골랐는지, 실행 중 무엇이 막혔고 어떻게 우회했는지는 하위 문서에 전부 적어두었다.
+
+| 단계 | 이미지 | 하는 일 | 실행 중 막혔던 지점과 우회 | 상세 |
+| --- | --- | --- | --- | --- |
+| 1. 크롤 | `unclecode/crawl4ai:latest` | 헤드리스 브라우저로 목록 페이지를 렌더링해 마크다운으로 변환하는 REST API 서버 | 목록이 AJAX로 채워져 `main.do` 로는 빈 표만 온다. 브라우저에서 `search()` 를 호출하려 했으나 crawl4ai 0.9.2가 신뢰되지 않은 요청의 `js_code` 를 금지 → 화면이 내부적으로 쓰는 목록 엔드포인트 `dsab007/detailSearch.ax` 를 직접 열어 우회 | [`crawler/README.md`](crawler/README.md) |
+| 2. 캡처 | `mcr.microsoft.com/playwright/python:v1.62.0-noble` | `page.screenshot(full_page=True)` 로 뷰포트 밖까지 포함한 전체 페이지 PNG 저장 | 이미지에 브라우저 바이너리는 있지만 `playwright` pip 패키지가 없다 → 실행 시 `pip install playwright==1.62.0` 한 줄을 붙임. `PLAYWRIGHT_BROWSERS_PATH` 가 이미 잡혀 있어 브라우저 다운로드는 불필요 | [`capture/README.md`](capture/README.md) |
+| 3. OCR | `jitesoft/tesseract-ocr:5.5.2` | PNG를 `-l kor+eng` 로 처리해 텍스트 추출 | 이미지 내장 언어가 `eng/equ/osd` 뿐이라 한국어가 없다 → `tessdata_best` 에서 `kor`·`eng` 를 받아 `TESSDATA_PREFIX` 를 마운트 경로로 덮어써 주입 | [`ocr/README.md`](ocr/README.md) |
+
+### 이미지 선택 근거 요약
+
+- **crawl4ai** — JS 렌더링과 본문 추출·마크다운 변환을 한 이미지에서 끝내고, REST 서버 모드를
+  기본 제공해 수집 계층을 언어 중립적으로 분리할 수 있다. Splash는 출력이 HTML/PNG 수준이라
+  본문 추출을 따로 붙여야 했다.
+- **Playwright(공식)** — 배포사가 직접 유지보수하고 릴리스마다 같은 버전 태그가 올라와
+  런타임/라이브러리 버전을 고정할 수 있다. Chromium·폰트·그래픽 의존성이 번들돼 `apt-get`
+  단계가 통째로 사라진다. Selenium은 드라이버·브라우저 버전을 따로 맞춰야 한다.
+- **tesseract(서드파티)** — tesseract는 공식 이미지를 내지 않아 서드파티 중에서 골랐다.
+  5.x LSTM 엔진 최신 계열을 따라가고 패치 단위 태그(`5.5.2`)로 고정 가능하며, arm64/amd64
+  멀티아치라 애플 실리콘에서 에뮬레이션 없이 돈다.
+
+### 이미지 크기
+
+측정 환경: Docker 29.6.2, macOS arm64. `docker images` 와 `docker image inspect` 가 서로 다른
+값을 보고하는데, 어느 쪽이 디스크 실사용량인지는 확인하지 못해 둘 다 적는다.
+
+| 이미지 | `docker images` | `inspect .Size` |
+| --- | --- | --- |
+| crawl4ai | 9.06GB | 약 2.2GB |
+| playwright/python | 3.77GB | — |
+| tesseract-ocr | 387MB | 약 123MB |
+
+## 품질과 한계
+
+정직하게 적는다.
+
+**OCR 한국어 정확도가 61.3% 다.** 캡처 PNG를 직접 눈으로 읽어 만든 정답지 62건과 대조한
+수치다(`python3 ocr/eval_quality.py`). 문장형 본문은 잘 읽히지만 짧은 UI 라벨, 색 배지 위
+글자, 체크박스 옆 텍스트는 자주 깨진다. **현재 품질로는 하류 분석에 그대로 넣을 수 없고,
+사람이 확인하는 보조 자료 수준이다.** 같은 정답지로 영어(`quotes.toscrape.com`)를 재면
+인용문 10/10, 저자명 8/8 완전 일치라, 한국어 특유의 문제로 보인다.
+
+**원인은 캡처 해상도로 보인다.** tesseract가 입력 해상도를 153 DPI로 추정했는데(권장 300),
+같은 페이지를 `device_scale_factor=2` 로 다시 캡처해 재측정하니 **61.3% → 83.9%** 로
+올랐다. 다만 한 페이지 1회 측정이라 일반화는 **미검증**이다.
+
+**대상이 DART 두세 페이지에 고정돼 있다.** URL이 코드에 상수로 박혀 있어 다른 사이트를
+넣으려면 코드를 고쳐야 한다.
+
+**robots.txt를 자동으로 지키지 않는다.** 사람이 한 번 읽고 판단한 결과를 코드에 반영한
+방식이라, 대상이 늘거나 robots.txt가 바뀌면 사람이 다시 확인해야 한다.
+
+**crawl4ai 이미지만 버전 태그가 없다.** 다른 둘은 `v1.62.0-noble`, `5.5.2` 로 고정했지만
+crawl4ai는 `latest` 밖에 없어 이미지가 갱신되면 동작이 달라질 수 있다. 실행 중인 버전은
+0.9.2 였다.
+
+**재실행 시 산출물이 계속 쌓인다.** 타임스탬프로 구분만 할 뿐 정리·보관 정책이 없다.
+
+정량 평가의 전체 내역(정답지 62건, 불일치 목록, 해상도 실험)은
+[`ocr/README.md`](ocr/README.md) 에 있다.
 
 ## 크롤링 윤리
 
@@ -317,7 +410,7 @@ Disallow: /html/search/SearchCompany_M2.html
 사람이 한 번 읽고 대상 URL을 직접 골라 넣는 방식이다. 대상이 늘어나면 자동 확인이
 필요하며, 로드맵에 넣어두었다.
 
-## 실무에서는 — 공식 API가 정석이다
+## 공식 API 대안
 
 **대량·정기 수집이 목적이라면 이 파이프라인이 아니라 공식 API를 써야 한다.** 화면을
 긁는 방식은 상대 서버에 부담을 주고, HTML 구조가 바뀌면 조용히 깨지며, 이용약관과 충돌할
@@ -356,32 +449,6 @@ DART OPEN API 쪽이 낫고, 상당수 공급자는 별도 API 키와 유료 플
 아직 반영되지 않은 신규 항목 같은 것들이다. 이 파이프라인은 그런 **틈을 메우는 보완
 수단**이지 공식 API의 대체재가 아니다. 크롤 → 캡처 → OCR 3층을 함께 둔 것도, 구조화된
 경로가 막혔을 때 화면이라는 마지막 표면에서라도 텍스트를 건지기 위해서다.
-
-## 한계
-
-정직하게 적는다.
-
-**OCR 한국어 정확도가 61.3% 다.** 캡처 PNG를 직접 눈으로 읽어 만든 정답지 62건과 대조한
-수치다(`python3 ocr/eval_quality.py`). 문장형 본문은 잘 읽히지만 짧은 UI 라벨, 색 배지 위
-글자, 체크박스 옆 텍스트는 자주 깨진다. **현재 품질로는 하류 분석에 그대로 넣을 수 없고,
-사람이 확인하는 보조 자료 수준이다.** 같은 정답지로 영어(`quotes.toscrape.com`)를 재면
-인용문 10/10, 저자명 8/8 완전 일치라, 한국어 특유의 문제로 보인다.
-
-**원인은 캡처 해상도로 보인다.** tesseract가 입력 해상도를 153 DPI로 추정했는데(권장 300),
-같은 페이지를 `device_scale_factor=2` 로 다시 캡처해 재측정하니 **61.3% → 83.9%** 로
-올랐다. 다만 한 페이지 1회 측정이라 일반화는 **미검증**이다.
-
-**대상이 DART 두세 페이지에 고정돼 있다.** URL이 코드에 상수로 박혀 있어 다른 사이트를
-넣으려면 코드를 고쳐야 한다.
-
-**robots.txt를 자동으로 지키지 않는다.** 사람이 한 번 읽고 판단한 결과를 코드에 반영한
-방식이라, 대상이 늘거나 robots.txt가 바뀌면 사람이 다시 확인해야 한다.
-
-**crawl4ai 이미지만 버전 태그가 없다.** 다른 둘은 `v1.62.0-noble`, `5.5.2` 로 고정했지만
-crawl4ai는 `latest` 밖에 없어 이미지가 갱신되면 동작이 달라질 수 있다. 실행 중인 버전은
-0.9.2 였다.
-
-**재실행 시 산출물이 계속 쌓인다.** 타임스탬프로 구분만 할 뿐 정리·보관 정책이 없다.
 
 ## 로드맵
 
