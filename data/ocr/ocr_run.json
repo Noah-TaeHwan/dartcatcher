@@ -1,0 +1,68 @@
+{
+  "run_at_utc": "2026-08-05T01:32:20.257555+00:00",
+  "image": "jitesoft/tesseract-ocr:5.5.2",
+  "lang": "kor+eng",
+  "tessdata_source": "https://github.com/tesseract-ocr/tessdata_best (kor, eng)",
+  "results": [
+    {
+      "image": "data/captures/20260805T003628Z_dart-main.png",
+      "text_file": "data/ocr/20260805T003628Z_dart-main.txt",
+      "ok": true,
+      "lang": "kor+eng",
+      "chars": 4184,
+      "non_empty_lines": 58,
+      "hangul_chars": 913,
+      "ascii_letter_chars": 148,
+      "elapsed_sec": 39.84,
+      "error": null
+    },
+    {
+      "image": "data/captures/20260805T003628Z_dart-search.png",
+      "text_file": "data/ocr/20260805T003628Z_dart-search.txt",
+      "ok": true,
+      "lang": "kor+eng",
+      "chars": 1695,
+      "non_empty_lines": 47,
+      "hangul_chars": 437,
+      "ascii_letter_chars": 149,
+      "elapsed_sec": 21.34,
+      "error": null
+    },
+    {
+      "image": "data/captures/20260805T003749Z_quotes-toscrape.png",
+      "text_file": "data/ocr/20260805T003749Z_quotes-toscrape.txt",
+      "ok": true,
+      "lang": "kor+eng",
+      "chars": 1377,
+      "non_empty_lines": 42,
+      "hangul_chars": 1,
+      "ascii_letter_chars": 988,
+      "elapsed_sec": 12.11,
+      "error": null
+    },
+    {
+      "image": "data/captures/20260805T012457Z_dart-main.png",
+      "text_file": "data/ocr/20260805T012457Z_dart-main.txt",
+      "ok": true,
+      "lang": "kor+eng",
+      "chars": 4128,
+      "non_empty_lines": 53,
+      "hangul_chars": 898,
+      "ascii_letter_chars": 151,
+      "elapsed_sec": 53.93,
+      "error": null
+    },
+    {
+      "image": "data/captures/20260805T012457Z_dart-search.png",
+      "text_file": "data/ocr/20260805T012457Z_dart-search.txt",
+      "ok": true,
+      "lang": "kor+eng",
+      "chars": 1695,
+      "non_empty_lines": 47,
+      "hangul_chars": 437,
+      "ascii_letter_chars": 149,
+      "elapsed_sec": 22.24,
+      "error": null
+    }
+  ]
+}

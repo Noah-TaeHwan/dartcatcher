@@ -1,0 +1,43 @@
+ Network quant-data-pipeline_default Creating 
+ Network quant-data-pipeline_default Created 
+ Container crawl4ai-compose Creating 
+ Container crawl4ai-compose Created 
+ Container quant-data-pipeline-crawl-1 Creating 
+ Container quant-data-pipeline-crawl-1 Created 
+ Container quant-data-pipeline-capture-1 Creating 
+ Container quant-data-pipeline-capture-1 Created 
+ Container crawl4ai-compose Starting 
+ Container crawl4ai-compose Started 
+ Container crawl4ai-compose Waiting 
+ Container crawl4ai-compose Healthy 
+ Container quant-data-pipeline-crawl-1 Starting 
+ Container quant-data-pipeline-crawl-1 Started 
+ Container quant-data-pipeline-crawl-1 Waiting 
+ Container quant-data-pipeline-crawl-1 Exited 
+ Container quant-data-pipeline-capture-1 Starting 
+ Container quant-data-pipeline-capture-1 Started 
+ Container quant-data-pipeline-capture-1 Waiting 
+ Container quant-data-pipeline-capture-1 Exited 
+ Container quant-data-pipeline-ocr-run-cd0278a72a10 Creating 
+ Container quant-data-pipeline-ocr-run-cd0278a72a10 Created 
+[ocr ] data/captures/20260805T003628Z_dart-main.png -> data/ocr/20260805T003628Z_dart-main.txt
+Estimating resolution as 164
+[ocr ] data/captures/20260805T003628Z_dart-search.png -> data/ocr/20260805T003628Z_dart-search.txt
+Estimating resolution as 153
+[ocr ] data/captures/20260805T003749Z_quotes-toscrape.png -> data/ocr/20260805T003749Z_quotes-toscrape.txt
+Estimating resolution as 163
+[ocr ] data/captures/20260805T005359Z_dart-main.png -> data/ocr/20260805T005359Z_dart-main.txt
+Estimating resolution as 164
+[ocr ] data/captures/20260805T005359Z_dart-search.png -> data/ocr/20260805T005359Z_dart-search.txt
+Estimating resolution as 153
+[ocr ] data/captures/20260805T005706Z_dart-main.png -> data/ocr/20260805T005706Z_dart-main.txt
+Estimating resolution as 164
+[ocr ] data/captures/20260805T005706Z_dart-search.png -> data/ocr/20260805T005706Z_dart-search.txt
+Estimating resolution as 153
+[ocr ] data/captures/20260805T010747Z_dart-main.png -> data/ocr/20260805T010747Z_dart-main.txt
+Estimating resolution as 164
+[ocr ] data/captures/20260805T010849Z_dart-main.png -> data/ocr/20260805T010849Z_dart-main.txt
+Estimating resolution as 164
+[ocr ] data/captures/20260805T010849Z_dart-search.png -> data/ocr/20260805T010849Z_dart-search.txt
+Estimating resolution as 153
+[완료] 10 개 텍스트 생성

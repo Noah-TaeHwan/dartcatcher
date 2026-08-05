@@ -1,0 +1,12 @@
+[ocr ] data/captures/20260805T003628Z_dart-main.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003628Z_dart-main.txt 4184자 / 한글 913자 / 58줄 / 40.31초
+[ocr ] data/captures/20260805T003628Z_dart-search.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003628Z_dart-search.txt 1695자 / 한글 437자 / 47줄 / 23.23초
+[ocr ] data/captures/20260805T003749Z_quotes-toscrape.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003749Z_quotes-toscrape.txt 1377자 / 한글 1자 / 42줄 / 11.98초
+[ocr ] data/captures/20260805T010849Z_dart-main.png (-l kor+eng)
+[ok  ] data/ocr/20260805T010849Z_dart-main.txt 4052자 / 한글 893자 / 52줄 / 43.08초
+[ocr ] data/captures/20260805T010849Z_dart-search.png (-l kor+eng)
+[ok  ] data/ocr/20260805T010849Z_dart-search.txt 1695자 / 한글 437자 / 47줄 / 23.03초
+
+[요약] 성공 5건 / 전체 5건, 로그: data/ocr/ocr_run.json

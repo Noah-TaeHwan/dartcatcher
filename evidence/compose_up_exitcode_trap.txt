@@ -1,0 +1,99 @@
+ Network quant-data-pipeline_default Creating 
+ Network quant-data-pipeline_default Created 
+ Container crawl4ai-compose Creating 
+ Container crawl4ai-compose Created 
+ Container quant-data-pipeline-crawl-1 Creating 
+ Container quant-data-pipeline-crawl-1 Created 
+ Container quant-data-pipeline-capture-1 Creating 
+ Container quant-data-pipeline-capture-1 Created 
+ Container quant-data-pipeline-ocr-1 Creating 
+ Container quant-data-pipeline-ocr-1 Created 
+Attaching to crawl4ai-compose, capture-1, crawl-1, ocr-1
+ Container crawl4ai-compose Starting 
+ Container crawl4ai-compose Started 
+ Container crawl4ai-compose Waiting 
+crawl4ai-compose  | entrypoint: no REDIS_PASSWORD provided; generated an ephemeral one.
+crawl4ai-compose  | 2026-08-05 01:07:23,921 INFO supervisord started with pid 1
+crawl4ai-compose  | 2026-08-05 01:07:24,935 INFO spawned: 'redis' with pid 8
+crawl4ai-compose  | 2026-08-05 01:07:24,938 INFO spawned: 'gunicorn' with pid 9
+crawl4ai-compose  | 8:C 05 Aug 2026 01:07:24.948 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+crawl4ai-compose  | 8:C 05 Aug 2026 01:07:24.948 * Redis version=8.8.0, bits=64, commit=00000000, modified=1, pid=8, just started
+crawl4ai-compose  | 8:C 05 Aug 2026 01:07:24.948 * Configuration loaded
+crawl4ai-compose  | 8:M 05 Aug 2026 01:07:24.949 * monotonic clock: ARM CNTVCT @ 24 ticks/us
+crawl4ai-compose  | 8:M 05 Aug 2026 01:07:24.950 * Running mode=standalone, port=6379.
+crawl4ai-compose  | 8:M 05 Aug 2026 01:07:24.951 * Server initialized
+crawl4ai-compose  | 8:M 05 Aug 2026 01:07:24.951 * Ready to accept connections tcp
+crawl4ai-compose  | [2026-08-05 01:07:25 +0000] [9] [INFO] Starting gunicorn 26.0.0
+crawl4ai-compose  | [2026-08-05 01:07:25 +0000] [9] [INFO] Listening at: http://0.0.0.0:11235 (9)
+crawl4ai-compose  | [2026-08-05 01:07:25 +0000] [9] [INFO] Using worker: uvicorn.workers.UvicornWorker
+crawl4ai-compose  | [2026-08-05 01:07:25 +0000] [16] [INFO] Booting worker with pid: 16
+crawl4ai-compose  | [2026-08-05 01:07:25 +0000] [9] [INFO] Control socket listening at /home/appuser/.gunicorn/gunicorn.ctl
+crawl4ai-compose  | 2026-08-05 01:07:26,566 INFO success: redis entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+crawl4ai-compose  | 2026-08-05 01:07:26,566 INFO success: gunicorn entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+crawl4ai-compose  | No SECRET_KEY set. Auto-generated an ephemeral key (changes on restart, invalidating issued tokens). Set SECRET_KEY for any real deployment.
+crawl4ai-compose  | /app/job.py:49: UserWarning: Field name "schema" in "LlmJobPayload" shadows an attribute in parent "BaseModel"
+crawl4ai-compose  |   class LlmJobPayload(BaseModel):
+crawl4ai-compose  | /app/server.py:1010: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+crawl4ai-compose  |   context_type: str = Query("all", regex="^(code|doc|all)$"),
+crawl4ai-compose  | MCP server running on 127.0.0.1:11235
+crawl4ai-compose  | [2026-08-05 01:07:27 +0000] [16] [INFO] Started server process [16]
+crawl4ai-compose  | [2026-08-05 01:07:27 +0000] [16] [INFO] Waiting for application startup.
+crawl4ai-compose  | 2026-08-05 01:07:27,012 - server - INFO - Auth gate active (credential configured).
+crawl4ai-compose  | 2026-08-05 01:07:27,021 - crawl4ai.egress - INFO - egress pinning proxy listening on http://127.0.0.1:39171
+crawl4ai-compose  | 2026-08-05 01:07:27,022 - crawl4ai.workqueue - INFO - work queue started (maxsize=1000, workers=4, per_principal=unlimited)
+crawl4ai-compose  | 2026-08-05 01:07:27,024 - monitor - INFO - Started persistence worker
+crawl4ai-compose  | 2026-08-05 01:07:27,056 - crawler_pool - INFO - 🔥 Creating permanent default browser
+crawl4ai-compose  | [INIT].... → Crawl4AI 0.9.2 
+crawl4ai-compose  | [2026-08-05 01:07:27 +0000] [16] [INFO] Application startup complete.
+ Container crawl4ai-compose Healthy 
+ Container quant-data-pipeline-crawl-1 Starting 
+ Container quant-data-pipeline-crawl-1 Started 
+ Container quant-data-pipeline-crawl-1 Waiting 
+crawl-1           | [crawl] 1페이지 요청 중...
+crawl4ai-compose  | 2026-08-05 01:07:29,572 - crawler_pool - INFO - 🆕 Creating new browser in cold pool (sig=dcadef10, mem=13.1%)
+crawl4ai-compose  | [INIT].... → Crawl4AI 0.9.2 
+crawl4ai-compose  | [FETCH]... ↓ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=1&maxResults=15                           | ✓ | ⏱: 2.73s 
+crawl4ai-compose  | [SCRAPE].. ◆ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=1&maxResults=15                           | ✓ | ⏱: 0.02s 
+crawl4ai-compose  | [COMPLETE] ● https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=1&maxResults=15                           | ✓ | ⏱: 2.75s 
+crawl4ai-compose  | 2026-08-05 01:07:32,685 - api - INFO - Memory usage: Start: 141.30078125 MB, End: 144.80078125 MB, Delta: 3.5 MB, Peak: 144.80078125 MB
+crawl-1           | [ok] 1페이지 status=200 공시건수=15 md=5083자
+crawl-1           | [crawl] 2페이지 요청 중...
+crawl4ai-compose  | 2026-08-05 01:07:35,269 - crawler_pool - INFO - ❄️  Using cold pool browser (sig=dcadef10)
+crawl4ai-compose  | [FETCH]... ↓ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=2&maxResults=15                           | ✓ | ⏱: 2.63s 
+crawl4ai-compose  | [SCRAPE].. ◆ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=2&maxResults=15                           | ✓ | ⏱: 0.01s 
+crawl4ai-compose  | [COMPLETE] ● https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=2&maxResults=15                           | ✓ | ⏱: 2.64s 
+crawl4ai-compose  | 2026-08-05 01:07:37,914 - api - INFO - Memory usage: Start: 145.015625 MB, End: 146.63671875 MB, Delta: 1.62109375 MB, Peak: 146.63671875 MB
+crawl-1           | [ok] 2페이지 status=200 공시건수=15 md=4937자
+crawl-1           | [crawl] 3페이지 요청 중...
+crawl4ai-compose  | 2026-08-05 01:07:40,506 - crawler_pool - INFO - ⬆️  Promoting to hot pool (sig=dcadef10, count=3)
+crawl4ai-compose  | [FETCH]... ↓ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=3&maxResults=15                           | ✓ | ⏱: 2.63s 
+crawl4ai-compose  | [SCRAPE].. ◆ https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=3&maxResults=15                           | ✓ | ⏱: 0.01s 
+crawl4ai-compose  | [COMPLETE] ● https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=3&maxResults=15                           | ✓ | ⏱: 2.65s 
+crawl4ai-compose  | 2026-08-05 01:07:43,160 - api - INFO - Memory usage: Start: 146.74609375 MB, End: 147.89453125 MB, Delta: 1.1484375 MB, Peak: 147.89453125 MB
+crawl-1           | [ok] 3페이지 status=200 공시건수=15 md=5562자
+ Container quant-data-pipeline-crawl-1 Exited 
+ Container quant-data-pipeline-capture-1 Starting 
+[Kcrawl-1 exited with code 0
+ Compose Stopping Aborting on container exit...
+ Container quant-data-pipeline-ocr-1 Stopping 
+ Container quant-data-pipeline-ocr-1 Stopped 
+ Container quant-data-pipeline-capture-1 Stopping 
+ Container quant-data-pipeline-capture-1 Started 
+ Container quant-data-pipeline-capture-1 Waiting 
+capture-1         | [접속] DART 전자공시시스템 메인 -> https://dart.fss.or.kr
+capture-1         | [성공] dart-main: HTTP 200 / title='전자공시시스템' / data/captures/20260805T010747Z_dart-main.png (407,932 bytes)
+capture-1         | [접속] DART 공시통합검색 -> https://dart.fss.or.kr/dsab007/main.do
+ Container quant-data-pipeline-capture-1 Stopped 
+ Container quant-data-pipeline-crawl-1 Stopping 
+[Kcapture-1 exited with code 137
+ Container quant-data-pipeline-crawl-1 Stopped 
+ Container crawl4ai-compose Stopping 
+ Container quant-data-pipeline-capture-1 Error service "capture" didn't complete successfully: exit 137
+crawl4ai-compose  | 2026-08-05 01:07:55,195 WARN received SIGTERM indicating exit request
+crawl4ai-compose  | 2026-08-05 01:07:55,199 INFO waiting for redis, gunicorn to die
+crawl4ai-compose  | [2026-08-05 01:07:55 +0000] [9] [INFO] Handling signal: term
+crawl4ai-compose  | [2026-08-05 01:07:55 +0000] [16] [INFO] Shutting down
+crawl4ai-compose  | [2026-08-05 01:07:55 +0000] [16] [INFO] Waiting for application shutdown.
+crawl4ai-compose  | 2026-08-05 01:07:58,424 INFO waiting for redis, gunicorn to die
+crawl4ai-compose  | 2026-08-05 01:08:01,441 INFO waiting for redis, gunicorn to die
+ Container crawl4ai-compose Stopped 

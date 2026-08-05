@@ -1,0 +1,126 @@
+# 크롤 → 캡처 → OCR 파이프라인을 Docker Compose로 정의한 것.
+#
+# 구성:
+#   crawl4ai  상시 서비스. REST API로 크롤 요청을 받는다.
+#   crawl     원샷 잡. crawl4ai가 healthy 가 된 뒤 목록을 수집한다.
+#   capture   원샷 잡. 크롤이 끝난 뒤 렌더링 화면을 PNG로 저장한다.
+#   ocr       원샷 잡. 캡처가 끝난 뒤 PNG에서 텍스트를 뽑는다.
+#
+# 실행:
+#   docker compose --profile pipeline run --rm ocr
+#   docker compose --profile pipeline down
+#
+# compose는 프로젝트 디렉터리의 .env 를 변수 치환에 자동으로 읽는다.
+# 따로 `set -a; . ./.env` 로 셸에 주입할 필요가 없다(실측 확인).
+#
+# `up` 이 아니라 `run` 인 것이 중요하다. 마지막 잡인 ocr 를 run 하면 depends_on 사슬을
+# 거슬러 올라가 crawl4ai(healthy) → crawl(정상종료) → capture(정상종료) 순으로 기다린 뒤
+# ocr 를 돌린다. 실제 실행 로그로 이 순서를 확인했다(evidence/compose_run.txt).
+#
+# `up --exit-code-from ocr` 는 쓰지 말 것. 이 옵션은 --abort-on-container-exit 를 켜서
+# "아무 컨테이너나 하나 끝나면" 전체를 정지시킨다. 원샷 잡인 crawl 이 정상 종료(0)하는
+# 순간 스택이 내려가 capture 가 SIGKILL(137)로 죽고 ocr 는 아예 실행되지 않는데,
+# 종료 코드는 ocr 기준이라 0 이 나와 성공처럼 보인다. 실측 기록은
+# evidence/compose_up_exitcode_trap.txt 에 남겨두었다.
+#
+# 토큰이 없다면 먼저 만든다:
+#   printf 'CRAWL4AI_API_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env && chmod 600 .env
+#
+# 단계별 로그를 순서대로 보며 돌리고 싶다면 `bash run_pipeline.sh` 쪽이 읽기 편하다.
+# 두 경로의 차이는 README.md의 "compose와 스크립트, 왜 둘 다 있나" 절에 적어두었다.
+
+services:
+  # ---------------------------------------------------------------------------
+  # 상시 서비스: crawl4ai REST API 서버
+  # ---------------------------------------------------------------------------
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: crawl4ai-compose
+    ports:
+      - "11235:11235"
+    environment:
+      # 이미지 기본값은 127.0.0.1 바인딩이라 컨테이너 밖에서 접속되지 않는다.
+      # 비루프백으로 열려면 이미지가 API 토큰을 요구하므로 함께 넘긴다.
+      GUNICORN_BIND: "0.0.0.0:11235"
+      CRAWL4AI_API_TOKEN: "${CRAWL4AI_API_TOKEN:?CRAWL4AI_API_TOKEN 이 필요하다. .env를 만들고 주입해주세요}"
+    # Chromium이 기본 64MB 공유메모리에서 죽는 것을 막는다.
+    shm_size: 1gb
+    # 이미지에 HEALTHCHECK가 내장돼 있어 별도 정의 없이 service_healthy 를 쓸 수 있다.
+
+  # ---------------------------------------------------------------------------
+  # 1단계: 크롤 (원샷)
+  # ---------------------------------------------------------------------------
+  crawl:
+    image: python:3.12-slim
+    profiles: ["pipeline"]
+    depends_on:
+      crawl4ai:
+        condition: service_healthy
+    volumes:
+      - .:/work
+    working_dir: /work
+    environment:
+      # 컨테이너끼리는 compose 네트워크의 서비스 이름으로 붙는다.
+      CRAWL4AI_BASE_URL: "http://crawl4ai:11235"
+      CRAWL4AI_API_TOKEN: "${CRAWL4AI_API_TOKEN:?}"
+      PYTHONUNBUFFERED: "1"
+    # crawl_dart.py 는 표준 라이브러리만 쓰므로 pip 설치가 필요 없다.
+    command: ["python", "crawler/crawl_dart.py"]
+
+  # ---------------------------------------------------------------------------
+  # 2단계: 캡처 (원샷)
+  # ---------------------------------------------------------------------------
+  capture:
+    image: mcr.microsoft.com/playwright/python:v1.62.0-noble
+    profiles: ["pipeline"]
+    depends_on:
+      crawl:
+        condition: service_completed_successfully
+    volumes:
+      - .:/work
+    working_dir: /work
+    environment:
+      PYTHONUNBUFFERED: "1"
+    # 이 이미지에는 브라우저 바이너리만 있고 playwright pip 패키지는 없다.
+    # PLAYWRIGHT_BROWSERS_PATH 가 이미 설정돼 있어 브라우저 다운로드는 불필요하다.
+    command:
+      - bash
+      - -c
+      - |
+        pip install --quiet --root-user-action=ignore playwright==1.62.0
+        python capture/capture.py
+
+  # ---------------------------------------------------------------------------
+  # 3단계: OCR (원샷)
+  # ---------------------------------------------------------------------------
+  ocr:
+    image: jitesoft/tesseract-ocr:5.5.2
+    profiles: ["pipeline"]
+    depends_on:
+      capture:
+        condition: service_completed_successfully
+    volumes:
+      - .:/work
+    working_dir: /work
+    environment:
+      # 이미지 기본 tessdata에는 kor이 없다. 저장소에 받아둔 쪽을 보게 한다.
+      TESSDATA_PREFIX: "/work/ocr/tessdata"
+    # 이미지의 기본 entrypoint는 인자를 tesseract로 넘기는 얇은 래퍼라,
+    # 여러 파일을 도는 반복문을 쓰려면 셸로 교체해야 한다.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ ! -f ocr/tessdata/kor.traineddata ]; then
+          echo "[중단] ocr/tessdata/kor.traineddata 가 없다." >&2
+          echo "       호스트에서 'bash ocr/fetch_tessdata.sh' 를 먼저 실행해주세요." >&2
+          exit 1
+        fi
+        mkdir -p data/ocr
+        for png in data/captures/*.png; do
+          [ -e "$$png" ] || { echo "[중단] data/captures 에 PNG가 없다." >&2; exit 1; }
+          out="data/ocr/$$(basename "$$png" .png)"
+          echo "[ocr ] $$png -> $$out.txt"
+          tesseract "$$png" "$$out" -l kor+eng
+        done
+        echo "[완료] $$(ls -1 data/ocr/*.txt | wc -l) 개 텍스트 생성"

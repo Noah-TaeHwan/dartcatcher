@@ -1,0 +1,16 @@
+{
+  "captured_at_utc": "20260805T003749Z",
+  "image": "mcr.microsoft.com/playwright/python:v1.62.0-noble",
+  "results": [
+    {
+      "slug": "quotes-toscrape",
+      "url": "https://quotes.toscrape.com",
+      "ok": true,
+      "status": 200,
+      "title": "Quotes to Scrape",
+      "screenshot": "data/captures/20260805T003749Z_quotes-toscrape.png",
+      "bytes": 206910,
+      "error": null
+    }
+  ]
+}

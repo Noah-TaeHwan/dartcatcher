@@ -1,0 +1,26 @@
+{
+  "captured_at_utc": "20260805T003628Z",
+  "image": "mcr.microsoft.com/playwright/python:v1.62.0-noble",
+  "results": [
+    {
+      "slug": "dart-main",
+      "url": "https://dart.fss.or.kr",
+      "ok": true,
+      "status": 200,
+      "title": "전자공시시스템",
+      "screenshot": "data/captures/20260805T003628Z_dart-main.png",
+      "bytes": 410541,
+      "error": null
+    },
+    {
+      "slug": "dart-search",
+      "url": "https://dart.fss.or.kr/dsab007/main.do",
+      "ok": true,
+      "status": 200,
+      "title": "전자공시시스템| 공시서류검색 | 공시통합검색",
+      "screenshot": "data/captures/20260805T003628Z_dart-search.png",
+      "bytes": 226410,
+      "error": null
+    }
+  ]
+}

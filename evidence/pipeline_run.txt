@@ -1,0 +1,59 @@
+
+════════════════════════════════════════════════════════════
+  0/3  사전 확인
+════════════════════════════════════════════════════════════
+[확인] docker 29.6.2 / python3 3.13.14
+
+════════════════════════════════════════════════════════════
+  1/3  크롤  (unclecode/crawl4ai:latest)
+════════════════════════════════════════════════════════════
+[기동] crawl4ai-pipeline (포트 11235)
+[확인] crawl4ai 응답 정상 ({"status":"ok","timestamp":1785893079.255975,"version":"0.9.2"})
+[crawl] 1페이지 요청 중...
+[ok] 1페이지 status=200 공시건수=15 md=4812자
+[crawl] 2페이지 요청 중...
+[ok] 2페이지 status=200 공시건수=15 md=5092자
+[crawl] 3페이지 요청 중...
+[ok] 3페이지 status=200 공시건수=15 md=5009자
+
+════════════════════════════════════════════════════════════
+  2/3  캡처  (mcr.microsoft.com/playwright/python:v1.62.0-noble)
+════════════════════════════════════════════════════════════
+[접속] DART 전자공시시스템 메인 -> https://dart.fss.or.kr
+[성공] dart-main: HTTP 200 / title='전자공시시스템' / data/captures/20260805T012457Z_dart-main.png (407,784 bytes)
+[접속] DART 공시통합검색 -> https://dart.fss.or.kr/dsab007/main.do
+[성공] dart-search: HTTP 200 / title='전자공시시스템| 공시서류검색 | 공시통합검색' / data/captures/20260805T012457Z_dart-search.png (226,410 bytes)
+
+[요약] 성공 2건 / 전체 2건, 로그: data/captures/20260805T012457Z_run.json
+
+════════════════════════════════════════════════════════════
+  3/3  OCR  (jitesoft/tesseract-ocr:5.5.2)
+════════════════════════════════════════════════════════════
+[skip] kor.traineddata 이미 존재 (12528128 bytes)
+[skip] eng.traineddata 이미 존재 (15400601 bytes)
+[ocr ] data/captures/20260805T003628Z_dart-main.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003628Z_dart-main.txt 4184자 / 한글 913자 / 58줄 / 58.94초
+[ocr ] data/captures/20260805T003628Z_dart-search.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003628Z_dart-search.txt 1695자 / 한글 437자 / 47줄 / 25.87초
+[ocr ] data/captures/20260805T003749Z_quotes-toscrape.png (-l kor+eng)
+[ok  ] data/ocr/20260805T003749Z_quotes-toscrape.txt 1377자 / 한글 1자 / 42줄 / 13.09초
+[ocr ] data/captures/20260805T010849Z_dart-main.png (-l kor+eng)
+[ok  ] data/ocr/20260805T010849Z_dart-main.txt 4052자 / 한글 893자 / 52줄 / 59.07초
+[ocr ] data/captures/20260805T010849Z_dart-search.png (-l kor+eng)
+[ok  ] data/ocr/20260805T010849Z_dart-search.txt 1695자 / 한글 437자 / 47줄 / 31.21초
+[ocr ] data/captures/20260805T012457Z_dart-main.png (-l kor+eng)
+[ok  ] data/ocr/20260805T012457Z_dart-main.txt 4128자 / 한글 898자 / 53줄 / 59.41초
+[ocr ] data/captures/20260805T012457Z_dart-search.png (-l kor+eng)
+[ok  ] data/ocr/20260805T012457Z_dart-search.txt 1695자 / 한글 437자 / 47줄 / 22.43초
+
+[요약] 성공 7건 / 전체 7건, 로그: data/ocr/ocr_run.json
+
+════════════════════════════════════════════════════════════
+  완료
+════════════════════════════════════════════════════════════
+산출물:
+  크롤 : 3개 마크다운  (data/crawl/)
+  캡처 : 7개 PNG        (data/captures/)
+  OCR  : 7개 텍스트     (data/ocr/)
+
+[정리] crawl4ai-pipeline 제거

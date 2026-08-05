@@ -1,0 +1,1 @@
+unclecode/crawl4ai:latest | Up 12 seconds (healthy) | 0.0.0.0:11235->11235/tcp, [::]:11235->11235/tcp

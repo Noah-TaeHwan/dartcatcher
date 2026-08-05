@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__/
+*.pyc
+.env
+data/raw/
+
+# tesseract 학습 데이터(합계 약 27MB). 저장소에 넣지 않고 ocr/fetch_tessdata.sh 로 받는다.
+ocr/tessdata/*.traineddata

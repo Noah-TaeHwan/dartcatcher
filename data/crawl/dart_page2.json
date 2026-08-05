@@ -1,0 +1,17 @@
+{
+  "page": 2,
+  "source_url": "https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage=2&maxResults=15",
+  "http_status": 200,
+  "fetched_at_utc": "2026-08-05T01:24:47.625492+00:00",
+  "markdown_chars": 5092,
+  "receipt_no_count": 15,
+  "receipt_no_sample": [
+    "20260805000065",
+    "20260805000066",
+    "20260805000070",
+    "20260805000071",
+    "20260805000073"
+  ],
+  "request_interval_sec": 2.5,
+  "crawler": "crawl4ai (docker unclecode/crawl4ai:latest)"
+}
