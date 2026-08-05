@@ -79,8 +79,10 @@ ensure_token() {
     printf 'CRAWL4AI_API_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env
     chmod 600 .env
   fi
+  set -a
   # shellcheck disable=SC1091
-  set -a; . ./.env; set +a
+  . ./.env
+  set +a
 
   if [[ -z "${CRAWL4AI_API_TOKEN:-}" ]]; then
     echo "[중단] .env에서 CRAWL4AI_API_TOKEN을 읽지 못했습니다." >&2
@@ -169,9 +171,9 @@ python3 ocr/run_ocr.py
 
 step "완료"
 echo "산출물:"
-echo "  크롤 : $(ls -1 data/crawl/*.md 2>/dev/null | wc -l | tr -d ' ')개 마크다운  (data/crawl/)"
-echo "  캡처 : $(ls -1 data/captures/*.png 2>/dev/null | wc -l | tr -d ' ')개 PNG        (data/captures/)"
-echo "  OCR  : $(ls -1 data/ocr/*.txt 2>/dev/null | wc -l | tr -d ' ')개 텍스트     (data/ocr/)"
+echo "  크롤 : $(find data/crawl -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')개 마크다운  (data/crawl/)"
+echo "  캡처 : $(find data/captures -maxdepth 1 -name '*.png' -type f 2>/dev/null | wc -l | tr -d ' ')개 PNG        (data/captures/)"
+echo "  OCR  : $(find data/ocr -maxdepth 1 -name '*.txt' -type f 2>/dev/null | wc -l | tr -d ' ')개 텍스트     (data/ocr/)"
 
 if (( STOP_CRAWLER )); then
   echo
