@@ -35,13 +35,26 @@ CI가 검사하는 것과 같은 명령이다. 이 중 `check_evidence.py` 와
 한다. CI는 실행할 때마다 새 컨테이너에 그 둘을 설치할 뿐이지, 로컬 설치를
 대신해주지는 않는다.
 
+macOS는 Homebrew로 둘 다 한 번에 설치한다.
+
 ```bash
-python3 -m pip install ruff   # CI(.github/workflows/ci.yml)와 같은 설치 명령.
-                               # "externally-managed-environment" 오류가 나면
-                               # pipx install ruff 를 대신 쓴다
-brew install shellcheck       # macOS. Linux는 배포판 패키지 관리자로 설치한다
-                               # (예: apt install shellcheck)
+brew install ruff shellcheck
 ```
+
+Linux는 shellcheck를 배포판 패키지 관리자로, ruff는 pip나 pipx로 설치한다.
+
+```bash
+apt install shellcheck        # 배포판에 맞는 패키지 관리자를 쓴다
+python3 -m pip install ruff   # 또는: pipx install ruff
+```
+
+pip는 플랫폼을 가리지 않는 범용 경로이지만 Homebrew Python처럼 관리되는
+환경에서는 `python3 -m pip install ruff` 가 PEP 668
+"externally-managed-environment" 오류로 그대로 실패한다. 이때는
+`pipx install ruff` 를 쓴다. CI(.github/workflows/ci.yml)는 매번 새로 띄우는
+컨테이너 안에서 `python -m pip install ruff` 로 설치하고 통과하지만, 그건
+컨테이너가 매번 비어 있는 환경이라 가능한 것이다. CI의 설치 명령을 로컬에도
+그대로 옮길 수 있다고 가정하지 않는다.
 
 ```bash
 python3 tools/check_evidence.py   # README 수치와 근거 대조
