@@ -1,0 +1,5 @@
+[요청] https://opendart.fss.or.kr/api/list.json?crtfc_key=***&bgn_de=20260805&end_de=20260805&page_count=100
+[ok] 1/3페이지 100건 (기간 전체 259건)
+[ok] 2/3페이지 100건
+[ok] 3/3페이지 59건
+[저장] data/api/disclosures_20260805.json 259건 (접수번호 유니크 259건)

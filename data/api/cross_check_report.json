@@ -1,0 +1,67 @@
+{
+  "crawl_receipt_count": 45,
+  "api_receipt_count": 259,
+  "matched_count": 45,
+  "match_rate_percent": 100.0,
+  "crawl_only_count": 0,
+  "crawl_only": [],
+  "api_only_count": 214,
+  "time_window": {
+    "basis": "list.json 응답이 접수 시각 역순으로 오는 것을 실측 확인해 순서를 시간축으로 사용했다. 공식 문서가 보장하는 정렬은 아니다.",
+    "crawl_newest_rcept_no": "20260805000118",
+    "crawl_oldest_rcept_no": "20260805000039",
+    "window_size": 48,
+    "newer_than_crawl_count": 93,
+    "older_than_crawl_count": 118,
+    "missed_inside_window_count": 3,
+    "missed_inside_window": [
+      {
+        "rcept_no": "20260805000060",
+        "corp_name": "키움증권",
+        "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+        "corp_cls": "Y",
+        "rcept_dt": "20260805"
+      },
+      {
+        "rcept_no": "20260805000055",
+        "corp_name": "미래에셋증권",
+        "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+        "corp_cls": "Y",
+        "rcept_dt": "20260805"
+      },
+      {
+        "rcept_no": "20260805800095",
+        "corp_name": "LS에코에너지",
+        "report_nm": "연결재무제표기준영업(잠정)실적(공정공시)",
+        "corp_cls": "Y",
+        "rcept_dt": "20260805"
+      }
+    ]
+  },
+  "receipt_prefix_differs_from_rcept_dt": {
+    "count": 83,
+    "note": "접수번호 앞 8자리가 rcept_dt와 다른 건. 효력발생안내처럼 전날 계열 번호를 달고 당일 공시로 잡히는 문서가 여기 해당한다."
+  },
+  "crawl_source_note": "접수번호는 data/crawl/dart_page*.md 의 rcpNo 링크에서 뽑았다. dart_summary.json 에는 페이지별 앞 5건 표본만 있어 45건 전체가 없다.",
+  "crawl_meta": {
+    "per_page_extracted": {
+      "dart_page1.md": 15,
+      "dart_page2.md": 15,
+      "dart_page3.md": 15
+    },
+    "summary_declared_count": 45,
+    "extracted_count": 45,
+    "count_matches_summary": true,
+    "summary_samples_all_present": true,
+    "crawl_fetched_at_utc": [
+      "2026-08-05T01:24:42.530319+00:00",
+      "2026-08-05T01:24:47.625492+00:00",
+      "2026-08-05T01:24:52.783519+00:00"
+    ]
+  },
+  "api_source": "DART OPEN API (list.json)",
+  "bgn_de": "20260805",
+  "end_de": "20260805",
+  "api_fetched_at_kst": "2026-08-05T11:24:39.374661+09:00",
+  "checked_at_kst": "2026-08-05T11:25:23.646158+09:00"
+}
