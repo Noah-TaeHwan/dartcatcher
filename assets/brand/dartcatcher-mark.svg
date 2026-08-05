@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-labelledby="dartcatcher-mark-title">
+  <title id="dartcatcher-mark-title">dartcatcher</title>
+
+  <!-- 화면 프레임. 아래 모서리 한 구간이 열려 있다. 공시 목록을 보여주는 화면이지만
+       그 화면이 조용히 흘려보내는 항목이 있다는 뜻이다. -->
+  <path d="M25 10 H69 A6 6 0 0 1 75 16 V42 A6 6 0 0 1 69 48 H61
+           M51 48 H25 A6 6 0 0 1 19 42 V16 A6 6 0 0 1 25 10"
+        fill="none" stroke="#1F3A5F" stroke-width="3.4" stroke-linecap="round"/>
+
+  <!-- 목록 행. 길이를 다르게 두어 표가 채워진 화면처럼 읽히게 했다. -->
+  <path d="M28 21 H66 M28 29 H58 M28 37 H62"
+        fill="none" stroke="#4A7BA7" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 프레임 밖으로 빠져나간 한 건. 이 저장소가 실제로 찾아낸 것이다. -->
+  <rect x="51" y="52" width="9.5" height="9.5" rx="2"
+        transform="rotate(24 55.75 56.75)" fill="#E8A33D"/>
+
+  <!-- 그물. 테두리와 자루, 그리고 격자 두 줄. 화면이 흘린 것을 받아낸다. -->
+  <path d="M31 68 H81" fill="none" stroke="#1F3A5F" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M34 69 L52 88 H60 L78 69"
+        fill="none" stroke="#1F3A5F" stroke-width="3.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 75 H71 M47 82 H65"
+        fill="none" stroke="#4A7BA7" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
