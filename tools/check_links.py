@@ -26,6 +26,8 @@ TARGET_DOCS = [
     "capture/README.md",
     "ocr/README.md",
     "api/README.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
 ]
 
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
