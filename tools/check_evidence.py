@@ -9,6 +9,14 @@
 계산된 값이 README에 문자열로 있는지만 확인한다. 그래서 이 스크립트가 원본과
 독립적으로 틀릴 여지가 없고, 어느 한쪽만 바뀌어도 검사가 깨진다.
 
+검사 대상은 코드 펜스를 걷어낸 본문, 즉 프로즈뿐이다. README에는 이 검사기
+자신의 실행 결과를 그대로 옮겨 붙인 콘솔 발췌("[ok  ] OCR 한국어 정확도:
+61.3%" 같은 줄)가 예시로 들어 있는데, 그 발췌는 어디까지나 삽화이지 문서의
+주장이 아니다. 펜스 안쪽까지 검사 대상에 넣으면 결과표의 실제 수치를 조용히
+바꿔도 그 발췌 문자열이 여전히 남아 있다는 이유만으로 검사가 통과해버린다.
+그러면 이 장치의 보증이 프로즈 어딘가에 우연히 나타나는 값 전부에 대해
+무력화된다. 그래서 값은 반드시 코드 펜스 밖의 프로즈에 있어야 한다.
+
 근거 파일이 없거나 형식이 어긋나면 통과가 아니라 실패로 끝낸다. 검사가 조용히
 0건이 되는 것이 이 장치의 유일한 실패 모드이며, 이는 이 저장소가
 evidence/compose_up_exitcode_trap.txt 에 기록해둔 함정과 같은 유형이다.
@@ -35,9 +43,35 @@ ACCURACY_PATTERN = re.compile(r"정확 일치 (\d+)/(\d+) \(([\d.]+)%\)")
 # 크롤 마크다운에 남은 공시 원문 링크의 접수번호.
 RECEIPT_PATTERN = re.compile(r"rcpNo=(\d+)")
 
+# 코드 펜스 시작·종료 줄. check_links.py 와 같은 패턴을 쓴다.
+FENCE_PATTERN = re.compile(r"^\s*(```|~~~)")
+
 
 class CheckError(RuntimeError):
     """근거 파일이 없거나 형식이 어긋나 수치를 파생할 수 없는 경우의 예외."""
+
+
+def strip_code_fences(text: str) -> str:
+    """코드 펜스 내부를 빈 줄로 바꿔 검사 대상에서 제외한다.
+
+    README의 콘솔 발췌는 이 검사기 자신이 출력하는 문구를 그대로 담고 있을 수
+    있다. 그런 발췌는 예시일 뿐 문서의 주장이 아니므로, 펜스 밖 프로즈에서만
+    파생값을 찾아야 발췌가 실제 수치 오류를 가려주는 구멍이 되지 않는다.
+    줄 번호를 유지하려고 삭제 대신 빈 줄로 치환한다.
+
+    :param text: 마크다운 원문
+    :returns: 펜스 내부가 비워진 문자열
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    inside = False
+    for line in lines:
+        if FENCE_PATTERN.match(line):
+            inside = not inside
+            result.append("")
+            continue
+        result.append("" if inside else line)
+    return "\n".join(result)
 
 
 def read_evidence(relative: str) -> str:
@@ -181,7 +215,8 @@ def main() -> int:
         print(f"[실패] 근거에서 수치를 파생하지 못했습니다: {error}", file=sys.stderr)
         return 1
 
-    readme = README_PATH.read_text(encoding="utf-8")
+    # 코드 펜스 안쪽(콘솔 발췌 등)은 프로즈가 아니므로 대조에서 제외한다.
+    readme = strip_code_fences(README_PATH.read_text(encoding="utf-8"))
     failures: list[tuple[str, str]] = []
 
     print(f"근거 대조 {len(checks)}건")
@@ -199,11 +234,15 @@ def main() -> int:
         sys.stdout.flush()
         print("", file=sys.stderr)
         print(
-            f"[실패] 근거에서 파생한 값이 README에 없습니다({len(failures)}건).",
+            f"[실패] 근거에서 파생한 값이 README 프로즈에 없습니다({len(failures)}건).",
             file=sys.stderr,
         )
         for name, derived in failures:
-            print(f"  {name}: README에 '{derived}' 가 있어야 합니다.", file=sys.stderr)
+            print(
+                f"  {name}: README 프로즈에 '{derived}' 가 있어야 합니다. "
+                "코드 펜스(콘솔 발췌 등) 안쪽은 예시일 뿐이라 검사 대상이 아닙니다.",
+                file=sys.stderr,
+            )
         print("", file=sys.stderr)
         print(
             "근거 파일을 바꿨다면 README의 해당 수치도 같이 고쳐야 합니다.",
