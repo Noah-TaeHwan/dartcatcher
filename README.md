@@ -6,6 +6,7 @@
 
 <sub>A three-stage financial-disclosure collection pipeline (crawl, screenshot, OCR), assembled entirely from off-the-shelf Docker images.</sub>
 
+[![CI](https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Compose](https://img.shields.io/badge/Docker%20Compose-ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![Python](https://img.shields.io/badge/Python-3.13%20stdlib--only-3776AB?logo=python&logoColor=white)](#빠른-시작)
@@ -20,6 +21,16 @@
 <p align="center">
   <sub>2단계 산출물인 DART 공시통합검색 전체 페이지 캡처(1444×1252). 3단계 OCR 정확도도 이 화면을 기준으로 측정했다.</sub>
 </p>
+
+## 당신이 여기 왔다면
+
+| 찾는 것 | 갈 곳 |
+| --- | --- |
+| 기성 도커 이미지를 조합해 수집 계층을 만드는 방법 | 이 문서를 계속 읽는다 |
+| DART 공시 데이터가 필요하다 | [`api/`](api/README.md) 공식 OpenAPI가 먼저다. 크롤링은 그다음이다 |
+| 컨테이너에서 한국어 OCR을 돌려야 한다 | [`ocr/`](ocr/README.md) tessdata 주입 경로 |
+| Docker Compose 원샷 잡 사슬이 조용히 성공으로 끝난다 | [`evidence/compose_up_exitcode_trap.txt`](evidence/compose_up_exitcode_trap.txt) |
+| 이 프로젝트에 기여하고 싶다 | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## 결과 한눈에
 
@@ -36,6 +47,7 @@
 
 ## 목차
 
+- [당신이 여기 왔다면](#당신이-여기-왔다면)
 - [개요](#개요)
 - [아키텍처](#아키텍처)
 - [빠른 시작](#빠른-시작)

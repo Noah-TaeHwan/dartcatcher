@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 보안 문제 신고
+    url: https://github.com/Noah-TaeHwan/dartcatcher/security/advisories/new
+    about: 인증키 유출 경로 등 보안 문제는 공개 이슈가 아닌 이쪽으로 알려주세요.
+  - name: 기여 안내
+    url: https://github.com/Noah-TaeHwan/dartcatcher/blob/main/CONTRIBUTING.md
+    about: PR을 보내기 전에 읽어주세요.
