@@ -18,7 +18,7 @@
 산출물 JSON에 저장하는 `request_url` 도 마스킹된 형태다.
 
 `cross_check.py` 는 인증키를 아예 건드리지 않는다. 환경변수를 읽지 않고
-네트워크 요청도 하지 않으며, `fetch_disclosures.py` 가 미리 받아 디스크에
+네트워크 요청도 하지 않으며 `fetch_disclosures.py` 가 미리 받아 디스크에
 저장해 둔 JSON만 읽는다.
 
 기여할 때 `fetch_disclosures.py` 의 키를 다루는 코드를 건드린다면 이 성질이
@@ -26,7 +26,7 @@
 
 ## 취약점 신고
 
-키가 로그나 산출물에 새는 경로를 발견했거나 다른 보안 문제를 찾았다면, 공개
+키가 로그나 산출물에 새는 경로를 발견했거나 다른 보안 문제를 찾았다면 공개
 이슈로 열지 말고 저장소 소유자에게 GitHub의
 [Private vulnerability reporting](https://github.com/Noah-TaeHwan/dartcatcher/security/advisories/new)
 으로 알려주기 바란다.

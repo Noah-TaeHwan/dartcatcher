@@ -52,9 +52,9 @@ pip는 플랫폼을 가리지 않는 범용 경로이지만 Homebrew Python처�
 환경에서는 `python3 -m pip install ruff` 가 PEP 668
 "externally-managed-environment" 오류로 그대로 실패한다. 이때는
 `pipx install ruff` 를 쓴다. CI(.github/workflows/ci.yml)는 매번 새로 띄우는
-컨테이너 안에서 `python -m pip install ruff` 로 설치하고 통과하지만, 그건
-컨테이너가 매번 비어 있는 환경이라 가능한 것이다. CI의 설치 명령을 로컬에도
-그대로 옮길 수 있다고 가정하지 않는다.
+컨테이너 안에서 `python -m pip install ruff` 로 설치하고 통과하지만 그건
+컨테이너가 매번 비어 있어서 가능하다. CI의 설치 명령을 로컬에도 그대로 옮길 수
+있다고 가정하지 않는다.
 
 ```bash
 python3 tools/check_evidence.py   # README 수치와 근거 대조
