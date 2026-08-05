@@ -1,18 +1,28 @@
-# dartcatcher
+<p align="center">
+  <img src="assets/brand/dartcatcher-logo.svg" width="380" alt="dartcatcher">
+</p>
+
+<p align="center"><em>화면이 흘린 것까지 잡는다.</em></p>
+
+<p align="center">
+  <a href="https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml"><img src="https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Noah-TaeHwan/dartcatcher/releases"><img src="https://img.shields.io/github/v/release/Noah-TaeHwan/dartcatcher" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Noah-TaeHwan/dartcatcher" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/python-3.13%20stdlib--only-3776AB?logo=python&logoColor=white" alt="Python 3.13 stdlib only">
+</p>
+
+<p align="center">
+  <a href="crawler/README.md"><img src="https://img.shields.io/badge/crawl4ai-0.9.2-FF6C37" alt="crawl4ai 0.9.2"></a>
+  <a href="capture/README.md"><img src="https://img.shields.io/badge/Playwright-v1.62.0-2EAD33?logo=playwright&logoColor=white" alt="Playwright v1.62.0"></a>
+  <a href="ocr/README.md"><img src="https://img.shields.io/badge/tesseract-5.5.2-5A5A5A" alt="tesseract 5.5.2"></a>
+  <a href="docker-compose.yml"><img src="https://img.shields.io/badge/Docker%20Compose-ready-2496ED?logo=docker&logoColor=white" alt="Docker Compose ready"></a>
+</p>
 
 **크롤 → 캡처 → OCR.** 금융감독원 전자공시시스템(DART)의 공개 공시를 세 가지 방식으로
 수집하는 파이프라인. 세 단계 모두 기성 Docker 이미지를 조합했고 호스트에는 아무 런타임도
 설치하지 않는다.
 
 <sub>A three-stage financial-disclosure collection pipeline (crawl, screenshot, OCR), assembled entirely from off-the-shelf Docker images.</sub>
-
-[![CI](https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/Noah-TaeHwan/dartcatcher/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![Python](https://img.shields.io/badge/Python-3.13%20stdlib--only-3776AB?logo=python&logoColor=white)](#빠른-시작)
-[![crawl4ai](https://img.shields.io/badge/crawl4ai-0.9.2-FF6C37)](crawler/README.md)
-[![Playwright](https://img.shields.io/badge/Playwright-v1.62.0-2EAD33?logo=playwright&logoColor=white)](capture/README.md)
-[![tesseract](https://img.shields.io/badge/tesseract-5.5.2-5A5A5A)](ocr/README.md)
 
 <p align="center">
   <img src="data/captures/20260805T003628Z_dart-search.png" alt="Playwright 컨테이너로 캡처한 DART 공시통합검색 전체 페이지" width="760">
@@ -45,6 +55,42 @@
 문서의 모든 수치는 2026-08-05 (KST) macOS arm64 / Docker 29.6.2 환경에서 실제로 실행한
 결과이며 출력 원문은 [`evidence/`](evidence/) 에 그대로 남겨두었다.
 
+### 이 수치는 CI가 지킨다
+
+위 표의 숫자는 손으로 옮겨 적은 것이 아니다. [`tools/check_evidence.py`](tools/check_evidence.py)
+가 `evidence/` 와 `data/` 의 원본에서 값을 **다시 계산해** README에 그 값이 있는지 대조한다.
+기대값을 스크립트에 적어두지 않으므로 검사기가 원본과 따로 틀릴 수 없고, 문서와 근거 중
+한쪽만 고치면 깨진다. 매 푸시마다 CI가 이 명령을 돌린다.
+
+```console
+$ python3 tools/check_evidence.py
+근거 대조 8건
+  [ok  ] OCR 한국어 정확도: 61.3%
+  [ok  ] HiDPI 재측정 정확도: 83.9%
+  [ok  ] 캡처 해상도(main): 1444×2469
+  [ok  ] 캡처 크기(main): 410,541
+  [ok  ] 캡처 해상도(search): 1444×1252
+  [ok  ] 캡처 크기(search): 226,410
+  [ok  ] 크롤 유니크 접수번호: 45건
+  [ok  ] 산출물 개수: 5개씩
+
+[통과] 8건 전부 README와 일치합니다.
+```
+
+README의 수치를 하나 바꾸고 다시 돌리면 이렇게 멈춘다.
+
+```console
+$ python3 tools/check_evidence.py
+근거 대조 8건
+  [FAIL] OCR 한국어 정확도: 61.3%
+  ...
+
+[실패] 근거에서 파생한 값이 README에 없습니다(1건).
+  OCR 한국어 정확도: README에 '61.3%' 가 있어야 합니다.
+
+근거 파일을 바꿨다면 README의 해당 수치도 같이 고쳐야 합니다.
+```
+
 ## 목차
 
 - [당신이 여기 왔다면](#당신이-여기-왔다면)
@@ -58,6 +104,7 @@
 - [공식 API 대안](#공식-api-대안)
 - [로드맵](#로드맵)
 - [저장소 구조](#저장소-구조)
+- [이름](#이름)
 - [라이선스](#라이선스)
 
 ## 개요
@@ -505,6 +552,10 @@ DART OPEN API 쪽이 낫고 상당수 공급자는 별도 API 키와 유료 플�
 │   ├── fetch_disclosures.py #   공시 목록 조회
 │   ├── cross_check.py       #   크롤 결과와 대조
 │   └── README.md
+├── tools/                   # 문서 검증 (CI가 돌린다)
+│   ├── check_evidence.py    #   README 수치를 근거 파일에서 파생해 대조
+│   └── check_links.py       #   문서 상대 링크와 앵커 검사
+├── assets/brand/            # 로고와 마크
 ├── data/                    # 산출물
 │   ├── crawl/               #   마크다운 + 메타데이터
 │   ├── captures/            #   PNG + 실행 로그
@@ -515,6 +566,19 @@ DART OPEN API 쪽이 낫고 상당수 공급자는 별도 API 키와 유료 플�
 
 `.env`(crawl4ai API 토큰)와 `ocr/tessdata/*.traineddata`(약 27MB)는 저장소에 포함하지
 않는다. 토큰은 `run_pipeline.sh` 가 만들고 학습 데이터는 `ocr/fetch_tessdata.sh` 가 받는다.
+
+## 이름
+
+`dartcatcher` 는 DART와 catcher를 붙인 것이다. 마크가 그리는 것도 같은 뜻이다. 공시 목록을
+띄운 화면의 아래 모서리가 한 구간 열려 있고, 거기서 빠져나간 한 건을 아래의 그물이 받는다.
+[공식 API 대안](#공식-api-대안) 절에 적은 실측이 그 장면이다. 크롤이 훑은 시간 구간 안에서
+화면 목록이 조용히 빼먹은 공시가 3건 있었고 공식 API와 대조해 찾아냈다.
+
+표기는 소문자 `dartcatcher` 로 굳힌다. 저장소, 명령, 문서 어디서나 같다. 브랜드 파일은
+[`assets/brand/`](assets/brand) 에 있다. 글자가 들어간
+[`dartcatcher-logo.svg`](assets/brand/dartcatcher-logo.svg) 는 워드마크를 시스템 산세리프로
+그리므로 보는 환경에 따라 자형이 달라진다. 자형까지 고정해야 하는 자리에는 글자가 없는
+[`dartcatcher-mark.svg`](assets/brand/dartcatcher-mark.svg) 를 쓴다.
 
 ## 라이선스
 
