@@ -73,6 +73,16 @@ def anchor_slug(heading: str) -> str:
     return slug.replace(" ", "-")
 
 
+def extract_headings(path: Path) -> set[str]:
+    """문서 파일 하나의 헤딩 앵커 슬러그 집합을 만든다.
+
+    :param path: 마크다운 파일의 절대 경로
+    :returns: 그 문서에 존재하는 앵커 슬러그 집합
+    """
+    body = strip_code_fences(path.read_text(encoding="utf-8"))
+    return {anchor_slug(m.group(2)) for m in HEADING_PATTERN.finditer(body)}
+
+
 def check_document(relative: str) -> list[str]:
     """문서 하나의 상대 링크와 앵커를 검사한다.
 
@@ -87,7 +97,7 @@ def check_document(relative: str) -> list[str]:
     body = strip_code_fences(raw)
     # 헤딩도 펜스를 걷어낸 본문에서 찾는다. 셸 예제의 주석 줄(`# ...`)이 헤딩으로
     # 잡히면 실재하지 않는 앵커가 유효한 것처럼 통과해버린다.
-    headings = {anchor_slug(m.group(2)) for m in HEADING_PATTERN.finditer(body)}
+    headings = extract_headings(path)
     problems: list[str] = []
 
     for label, target in LINK_PATTERN.findall(body) + NESTED_LINK_PATTERN.findall(body):
@@ -96,6 +106,7 @@ def check_document(relative: str) -> list[str]:
 
         file_part, _, anchor_part = target.partition("#")
 
+        anchor_headings = headings
         if file_part:
             resolved = (path.parent / file_part).resolve()
             if not resolved.exists():
@@ -103,8 +114,12 @@ def check_document(relative: str) -> list[str]:
                     f"{relative}: [{label}]({target}) 가 가리키는 파일이 없습니다."
                 )
                 continue
+            # 다른 문서를 가리키는 링크의 앵커는 그 문서 자신의 헤딩과 대조해야 한다.
+            # 대상이 마크다운이 아니면(예: evidence 텍스트 파일) 앵커 개념이 없으므로
+            # 검사하지 않는다.
+            anchor_headings = extract_headings(resolved) if resolved.suffix == ".md" else None
 
-        if anchor_part and not file_part and anchor_part not in headings:
+        if anchor_part and anchor_headings is not None and anchor_part not in anchor_headings:
             problems.append(
                 f"{relative}: [{label}](#{anchor_part}) 에 해당하는 헤딩이 없습니다."
             )

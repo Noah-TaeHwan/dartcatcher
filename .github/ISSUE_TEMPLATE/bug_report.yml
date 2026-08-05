@@ -50,3 +50,29 @@ body:
       render: shell
     validations:
       required: true
+
+  - type: textarea
+    id: images
+    attributes:
+      label: 컨테이너 이미지 버전
+      description: |
+        로컬에 받아둔 이미지 태그는 `docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}'` 로
+        확인할 수 있습니다. 이 중 crawl4ai만 버전 태그 없이 `latest` 로 고정돼 있어(README
+        "품질과 한계" 절 참고) 이미지가 갱신되면 동작이 달라질 수 있습니다. 그래서 실제로
+        떠 있던 crawl4ai 버전이 가장 중요합니다. 컨테이너 시작 로그에 찍히거나,
+        `curl -H 'Authorization: Bearer $CRAWL4AI_API_TOKEN' http://localhost:11235/health`
+        응답의 `version` 필드로도 확인할 수 있습니다. 컨테이너가 이미 내려갔다면 비워두셔도
+        됩니다.
+      placeholder: |
+        crawl4ai: latest (health 응답 version 0.9.2)
+        capture: mcr.microsoft.com/playwright/python:v1.62.0-noble
+        ocr: jitesoft/tesseract-ocr:5.5.2
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 확인
+      options:
+        - label: 같은 버그를 다루는 기존 이슈가 없는지 확인했습니다
+        - label: 붙여넣은 출력에서 인증키나 토큰을 지웠습니다
