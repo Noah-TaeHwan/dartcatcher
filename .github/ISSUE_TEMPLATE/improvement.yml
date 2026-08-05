@@ -1,0 +1,34 @@
+name: 개선 제안
+description: 정확도, 문서, 구조에 대한 제안
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        README 로드맵에 남은 항목이라면 그것을 언급해주세요.
+        측정 가능한 제안일수록 반영이 빠릅니다.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 무엇을 바꾸자는 제안인가요
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: 왜 그렇게 보시나요
+      description: |
+        측정값이 있다면 함께 적어주세요. 이 저장소는 근거 없는 수치를 문서에
+        넣지 않습니다. 아직 측정하지 않았다면 "미검증"이라고 적어주셔도 됩니다.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 확인
+      options:
+        - label: README 로드맵에 이미 있는 항목인지 확인했습니다
+        - label: 기존 이슈에 같은 제안이 없는지 확인했습니다

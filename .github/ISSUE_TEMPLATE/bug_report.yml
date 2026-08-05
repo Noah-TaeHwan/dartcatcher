@@ -1,0 +1,52 @@
+name: 버그 신고
+description: 파이프라인이 문서대로 동작하지 않는 경우
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        이 저장소는 실행 환경에 따라 결과가 달라지는 부분이 많습니다.
+        환경 정보를 함께 적어주시면 재현이 빨라집니다.
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 어느 단계인가요
+      options:
+        - "1. 크롤 (crawl4ai)"
+        - "2. 캡처 (Playwright)"
+        - "3. OCR (tesseract)"
+        - "api/ 공식 OpenAPI 조회"
+        - "run_pipeline.sh 또는 docker compose"
+        - "문서"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 무엇이 일어났나요
+      description: 실행한 명령과 그 출력을 그대로 붙여주세요. 인증키는 지워주세요.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 무엇을 기대했나요
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: "`docker version` 과 `python3 --version` 출력, OS와 아키텍처"
+      placeholder: |
+        Docker 29.6.2
+        Python 3.13.1
+        macOS 15.6 arm64
+      render: shell
+    validations:
+      required: true
