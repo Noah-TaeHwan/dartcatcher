@@ -1,0 +1,15 @@
+{
+  "default_site": "dart",
+  "sites": {
+    "dart": {
+      "label": "DART 전자공시 목록 (dart.fss.or.kr)",
+      "user_agent": "*",
+      "robots_source": "evidence/dart_robots.txt",
+      "list_url_template": "https://dart.fss.or.kr/dsab007/detailSearch.ax?currentPage={page}&maxResults=15",
+      "request_interval_sec": 2.5,
+      "pages": [1, 2, 3],
+      "page_timeout": 90000,
+      "delay_before_return_html": 1.0
+    }
+  }
+}
