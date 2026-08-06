@@ -197,7 +197,15 @@ bash run_pipeline.sh
 ```bash
 bash run_pipeline.sh --skip-crawl     # 이미 수집한 결과가 있을 때 2·3단계만
 bash run_pipeline.sh --stop-crawler   # 끝나고 crawl4ai 컨테이너까지 정리
+bash run_pipeline.sh --cleanup        # 끝나고 오래된 data/ 산출물도 정리(아래 정책)
 ```
+
+**산출물 보관 정책:** 캡처·OCR 산출물은 실행할 때마다 타임스탬프 접두어
+(`YYYYMMDDTHHMMSSZ`)로 `data/captures/`, `data/ocr/` 에 쌓인다. 기본은 **최신 3회
+실행만 유지**하고 더 오래된 것은 정리한다. 정리 규칙은
+[`tools/retain_outputs.sh`](tools/retain_outputs.sh) 에 구현돼 있으며, **기본은
+dry-run**(대상만 나열, 변경 없음)이고 `--delete`(삭제) 또는 `--archive <DIR>`(백업
+이동)을 명시할 때만 실제로 바꾼다.
 
 <details>
 <summary><b>실제 실행 출력 펼쳐보기</b> (전체는 <code>evidence/pipeline_run.txt</code>)</summary>
@@ -417,7 +425,12 @@ crawl4ai가 렌더링한 공시 목록을 마크다운 표로 변환한 결과. 
 crawl4ai는 `latest` 밖에 없어 이미지가 갱신되면 동작이 달라질 수 있다. 실행 중인 버전은
 0.9.2 였다.
 
-**재실행 시 산출물이 계속 쌓인다.** 타임스탬프로 구분만 할 뿐 정리·보관 정책이 없다.
+**재실행 시 산출물이 쌓인다.** 캡처·OCR 산출물은 타임스탬프로 구분해 계속 쌓인다.
+보관·정리 정책은
+[`tools/retain_outputs.sh`](tools/retain_outputs.sh) 와 `run_pipeline.sh --cleanup`
+으로 구현했다(기본 최신 3회 실행만 유지, `--dry-run` 기본). 다만 OCR 단계가
+`data/captures/` 에 쌓인 **모든** PNG를 다시 처리하는 동작은 여전해, `--cleanup` 으로
+정리하지 않으면 실행할수록 느려진다.
 
 정량 평가의 전체 내역(정답지 62건, 불일치 목록, 해상도 실험)은
 [`ocr/README.md`](ocr/README.md) 에 있다.
