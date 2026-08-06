@@ -18,6 +18,7 @@ CRAWL4AI_API_TOKEN(또는 저장소 루트의 gitignore된 .env)에서 읽는다
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -28,18 +29,64 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from robots_check import check_urls_allowed
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "data" / "crawl"
+DEFAULT_CONFIG = REPO_ROOT / "crawler" / "sites.json"
 
 API_BASE = os.environ.get("CRAWL4AI_BASE_URL", "http://localhost:11235")
-LIST_URL = (
-    "https://dart.fss.or.kr/dsab007/detailSearch.ax"
-    "?currentPage={page}&maxResults=15"
-)
 
-# 크롤링 윤리: 대상 서버 부하를 낮추기 위한 페이지 간 최소 대기(초).
-REQUEST_INTERVAL_SEC = 2.5
-PAGES = (1, 2, 3)
+
+def load_site(config_path: Path, site_name: str) -> dict:
+    """설정 파일에서 대상 사이트 구성을 읽어 반환한다.
+
+    :param config_path: 대상 URL 설정이 담긴 JSON 파일 경로
+    :param site_name: 불러올 사이트 키
+    :returns: 그 사이트의 구성 딕셔너리
+    :raises SystemExit: 설정 파일이 없거나 사이트 키가 없는 경우
+    """
+    if not config_path.exists():
+        sys.exit(f"설정 파일이 없습니다: {config_path}")
+
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    sites = data.get("sites", {})
+    if site_name not in sites:
+        sys.exit(f"설정 파일에 '{site_name}' 사이트가 없습니다.")
+    return sites[site_name]
+
+
+def build_page_urls(template: str, pages: list[int]) -> list[str]:
+    """목록 URL 템플릿에 페이지 번호를 채워 대상 URL 목록을 만든다.
+
+    :param template: `{page}` 자리표를 가진 URL 템플릿
+    :param pages: 크롤할 페이지 번호 목록
+    :returns: 채워진 URL 목록
+    """
+    return [template.format(page=page) for page in pages]
+
+
+def verify_robots(site: dict, urls: list[str]) -> None:
+    """robots.txt 규칙으로 대상 URL을 검사하고 금지되면 중단한다.
+
+    :param site: 대상 사이트 구성(robots_source, user_agent 포함)
+    :param urls: robots.txt에 대조할 대상 URL 목록
+    :raises SystemExit: 금지된 URL이 하나라도 있는 경우
+    """
+    denied = check_urls_allowed(
+        site["robots_source"],
+        site["user_agent"],
+        urls,
+        REPO_ROOT,
+    )
+    if denied:
+        blocked = "\n  ".join(denied)
+        sys.exit(
+            "robots.txt가 다음 URL을 금지해 중단합니다.\n"
+            f"  {blocked}\n"
+            "robots_source(기본 evidence/dart_robots.txt)를 확인하세요."
+        )
+    print(f"[robots] {site['label']} 대상 URL {len(urls)}건 전부 허용 확인됨")
 
 
 def load_token() -> str:
@@ -65,16 +112,17 @@ def load_token() -> str:
     )
 
 
-def crawl_page(page: int, token: str) -> dict:
-    """crawl4ai /crawl 엔드포인트로 DART 목록 한 페이지를 렌더링한다.
+def crawl_page(page: int, token: str, site: dict) -> dict:
+    """crawl4ai /crawl 엔드포인트로 대상 목록 한 페이지를 렌더링한다.
 
-    :param page: DART 최근공시 목록의 페이지 번호(1부터)
+    :param page: 대상 목록의 페이지 번호(1부터)
     :param token: crawl4ai Bearer 토큰
+    :param site: 대상 사이트 구성(list_url_template, page_timeout, delay 포함)
     :returns: crawl4ai 응답의 results[0] 딕셔너리
     :raises RuntimeError: API가 실패를 반환한 경우
     """
     payload = {
-        "urls": [LIST_URL.format(page=page)],
+        "urls": [site["list_url_template"].format(page=page)],
         "browser_config": {
             "type": "BrowserConfig",
             "params": {"headless": True},
@@ -83,8 +131,8 @@ def crawl_page(page: int, token: str) -> dict:
             "type": "CrawlerRunConfig",
             "params": {
                 "cache_mode": "BYPASS",
-                "page_timeout": 90000,
-                "delay_before_return_html": 1.0,
+                "page_timeout": site["page_timeout"],
+                "delay_before_return_html": site["delay_before_return_html"],
             },
         },
     }
@@ -119,12 +167,13 @@ def extract_markdown(result: dict) -> str:
     return markdown or ""
 
 
-def summarize(result: dict, page: int, markdown: str) -> dict:
+def summarize(result: dict, page: int, markdown: str, interval: float) -> dict:
     """저장할 JSON 메타데이터를 구성한다.
 
     :param result: crawl4ai results[0] 딕셔너리
     :param page: 페이지 번호
     :param markdown: 추출한 마크다운 본문
+    :param interval: 요청 간격(초). 메타데이터에 그대로 기록한다
     :returns: 산출물 검증에 필요한 최소 메타데이터
     """
     html = result.get("html", "") or ""
@@ -137,39 +186,79 @@ def summarize(result: dict, page: int, markdown: str) -> dict:
         "markdown_chars": len(markdown),
         "receipt_no_count": len(receipt_numbers),
         "receipt_no_sample": receipt_numbers[:5],
-        "request_interval_sec": REQUEST_INTERVAL_SEC,
+        "request_interval_sec": interval,
         "crawler": "crawl4ai (docker unclecode/crawl4ai:latest)",
     }
 
 
+def parse_args() -> argparse.Namespace:
+    """명령줄 인자를 해석한다.
+
+    :returns: 해석된 인자 네임스페이스
+    """
+    parser = argparse.ArgumentParser(description="대상 사이트 목록 수집")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help="대상 URL 설정 JSON 파일 (기본 crawler/sites.json)",
+    )
+    parser.add_argument(
+        "--site",
+        default="dart",
+        help="설정 파일에서 불러올 사이트 키 (기본 dart)",
+    )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="robots.txt 검사까지만 하고 크롤링 없이 종료",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
-    """페이지 1~3을 순회 수집하고 결과를 저장한다.
+    """구성한 사이트의 페이지를 순회 수집하고 결과를 저장한다.
+
+    1) 설정 파일에서 대상 사이트를 읽는다. 2) robots.txt로 대상 URL이
+    전부 허용되는지 확인하고 금지되면 중단한다. 3) 허용되면 페이지별로
+    수집·저장하고 요약을 남긴다.
 
     :returns: 프로세스 종료 코드(0 성공, 1 전체 실패)
     """
+    args = parse_args()
+    site = load_site(args.config, args.site)
+    pages = site["pages"]
+    interval = site["request_interval_sec"]
+
+    urls = build_page_urls(site["list_url_template"], pages)
+    verify_robots(site, urls)
+    if args.check_only:
+        return 0
+
     token = load_token()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    prefix = args.site
     summaries: list[dict] = []
-    for index, page in enumerate(PAGES):
+    for index, page in enumerate(pages):
         if index:
             # 요청 간격 준수: 첫 페이지를 제외한 매 요청 앞에서 대기한다.
-            time.sleep(REQUEST_INTERVAL_SEC)
+            time.sleep(interval)
 
         print(f"[crawl] {page}페이지 요청 중...", flush=True)
         try:
-            result = crawl_page(page, token)
+            result = crawl_page(page, token, site)
         except (urllib.error.URLError, RuntimeError, TimeoutError) as error:
             print(f"[fail] {page}페이지: {error}", file=sys.stderr)
             summaries.append({"page": page, "error": str(error)})
             continue
 
         markdown = extract_markdown(result)
-        meta = summarize(result, page, markdown)
+        meta = summarize(result, page, markdown, interval)
         summaries.append(meta)
 
-        (OUT_DIR / f"dart_page{page}.md").write_text(markdown, encoding="utf-8")
-        (OUT_DIR / f"dart_page{page}.json").write_text(
+        (OUT_DIR / f"{prefix}_page{page}.md").write_text(markdown, encoding="utf-8")
+        (OUT_DIR / f"{prefix}_page{page}.json").write_text(
             json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         print(
@@ -178,7 +267,7 @@ def main() -> int:
             flush=True,
         )
 
-    (OUT_DIR / "dart_summary.json").write_text(
+    (OUT_DIR / f"{prefix}_summary.json").write_text(
         json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return 0 if any("error" not in item for item in summaries) else 1

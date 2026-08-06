@@ -13,6 +13,7 @@
 #   bash run_pipeline.sh                  # 3단계 모두 실행
 #   bash run_pipeline.sh --stop-crawler   # 끝나고 crawl4ai 컨테이너까지 정리
 #   bash run_pipeline.sh --skip-crawl     # 이미 수집한 결과가 있을 때 2·3단계만
+#   bash run_pipeline.sh --cleanup        # 끝나고 오래된 data/ 산출물도 정리
 #
 set -euo pipefail
 
@@ -42,13 +43,19 @@ HEALTH_TIMEOUT_SEC=120
 STOP_CRAWLER=0
 SKIP_CRAWL=0
 
+# 산출물 보관 정책: data/captures·data/ocr 에 최신 KEEP_RUNS 회 실행만 남긴다.
+# 자세한 규칙과 사용법은 tools/retain_outputs.sh 참고.
+KEEP_RUNS=3
+CLEANUP=0
+
 # --- 인자 파싱 ---------------------------------------------------------------
 
 for arg in "$@"; do
   case "$arg" in
     --stop-crawler) STOP_CRAWLER=1 ;;
     --skip-crawl)   SKIP_CRAWL=1 ;;
-    -h|--help)      sed -n '2,20p' "$0"; exit 0 ;;
+    --cleanup)      CLEANUP=1 ;;
+    -h|--help)      sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "알 수 없는 인자: $arg (사용법은 --help)" >&2; exit 2 ;;
   esac
 done
@@ -174,6 +181,17 @@ echo "산출물:"
 echo "  크롤 : $(find data/crawl -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')개 마크다운  (data/crawl/)"
 echo "  캡처 : $(find data/captures -maxdepth 1 -name '*.png' -type f 2>/dev/null | wc -l | tr -d ' ')개 PNG        (data/captures/)"
 echo "  OCR  : $(find data/ocr -maxdepth 1 -name '*.txt' -type f 2>/dev/null | wc -l | tr -d ' ')개 텍스트     (data/ocr/)"
+
+# 산출물 보관 정책: 기본은 dry-run으로 안내만, --cleanup 일 때만 실제로 정리한다.
+echo
+if (( CLEANUP )); then
+  echo "[정리] 오래된 산출물(최신 ${KEEP_RUNS}회 실행만 유지)"
+  tools/retain_outputs.sh --keep "${KEEP_RUNS}" --delete
+else
+  echo "산출물 보관: 최신 ${KEEP_RUNS}회 실행만 유지한다. 오래된 것은 아래로 정리한다:"
+  echo "  tools/retain_outputs.sh --keep ${KEEP_RUNS} --delete   # dry-run 후 실제 정리는 --delete"
+  echo "  bash run_pipeline.sh --cleanup                         # 파이프라인 끝나고 정리까지"
+fi
 
 if (( STOP_CRAWLER )); then
   echo

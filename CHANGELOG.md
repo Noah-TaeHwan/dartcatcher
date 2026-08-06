@@ -5,6 +5,42 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-06
+
+마이너 릴리스. 크롤링 윤리 제도를 코드로 격상하고, 대상 사이트를 코드 수정 없이
+설정으로 바꿀 수 있게 하며, 재실행 시 쌓이던 산출물 보관 정책을 추가했다.
+
+### 추가
+
+- `crawler/robots_check.py`: 수집 전에 대상 URL이 robots.txt 규칙에 허용되는지
+  표준 `urllib.robotparser` 로 검사하고 하나라도 금지면 크롤링을 시작하지 않고
+  중단한다. 원문은 로컬 파일(기본 `evidence/dart_robots.txt`, 네트워크 요청 없음)
+  또는 실시간 `/robots.txt` URL에서 얻는다. (README "크롤링 윤리" 절의 사람 판단을
+  코드로 승격)
+- `crawler/sites.json`: 코드 상수로 박혀 있던 대상 URL·요청 간격·페이지를 설정
+  파일로 분리. `crawl_dart.py --site/--config` 로 다른 사이트에 적용할 수 있다.
+- `crawl_dart.py --check-only`: robots.txt 검사까지만 하고 크롤링 없이 종료.
+- `tools/retain_outputs.sh`: 캡처·OCR 산출물 보관 정책. 기본 **최신 3회 실행만
+  유지**, 기본은 dry-run(대상만 나열·변경 없음)이고 `--delete`(삭제)/`--archive
+  <DIR>`(백업 이동)을 명시할 때만 실제로 바꾼다. macOS 기본 bash 3.2 호환.
+- `run_pipeline.sh --cleanup`: 종료 후 오래된 산출물 정리까지 함께 수행.
+
+### 수정
+
+- README "품질과 한계"·"크롤링 윤리"·"로드맵" 절을 이번 변경에 맞게 갱신하고,
+  로드맵 항목 2건(robots.txt 자동 확인, 대상 URL 설정 분리)을 완료 표시.
+- `crawler/README.md` 에 설정 분리·robots 확인 사용법 추가.
+
+### 검증
+
+- CI 3잡(ruff, shellcheck, check_links, check_evidence) 통합 브랜치에서 전부 green.
+- 단위 테스트 `crawler` 7건 통과.
+- robots 허용 케이스: DART 대상 URL 3건 전부 허용. 거부 케이스:
+  `/dsaf001/main.do` 를 대상으로 한 임시 설정에서 "robots.txt가 다음 URL을 금지해
+  중단합니다" 로 종료.
+- `tools/retain_outputs.sh --keep 2` dry-run: 실제 `data/` 에서 실행 3회 중
+  오래된 1회(5파일)를 정리 대상으로 정확히 나열.
+
 ## [0.1.0] - 2026-08-05
 
 첫 공개 버전. 크롤·캡처·OCR 3단계 파이프라인과 공식 OpenAPI 교차 검증이 모두
@@ -62,5 +98,6 @@
 - crawl4ai 이미지만 버전 태그가 없어 `latest` 를 쓴다. 검증 시점 버전은 0.9.2였다
 - 재실행 시 산출물이 계속 쌓인다. 정리 정책이 없다
 
-[Unreleased]: https://github.com/Noah-TaeHwan/dartcatcher/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Noah-TaeHwan/dartcatcher/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Noah-TaeHwan/dartcatcher/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Noah-TaeHwan/dartcatcher/releases/tag/v0.1.0

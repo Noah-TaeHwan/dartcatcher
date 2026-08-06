@@ -108,6 +108,21 @@ Disallow: /html/search/SearchCompany_M2.html
   있지만 **따라 들어가지 않았다.** 목록 페이지만 수집하고 멈춘다.
 - `Disallow: /dsae001/selectPopup.ax`(기업개황 팝업)도 마찬가지로 따라가지 않았다.
 
+### robots.txt 자동 확인
+
+이 판단은 손으로 한 번 한 뒤 코드로 승격했다. `crawler/robots_check.py` 가 표준
+`urllib.robotparser` 로 대상 URL을 robots.txt 규칙과 대조하고, 하나라도 금지면 크롤링을
+시작하기 전에 중단한다. 원문은 `crawler/sites.json` 의 `robots_source` 로 지정하며, 로컬
+파일(기본 `evidence/dart_robots.txt`, 네트워크 요청 없음) 또는 실시간 `/robots.txt` URL
+둘 다 지원한다. 확인만 하고 끝내려면 아래처럼 돌린다:
+
+```bash
+python3 crawler/crawl_dart.py --check-only
+# [robots] DART 전자공시 목록 (dart.fss.or.kr) 대상 URL 3건 전부 허용 확인됨
+```
+
+robots.txt가 URL을 금지하면 비영(非零) 종료 코드로 멈춘다.
+
 DART가 허용되었으므로 폴백 대상(`https://quotes.toscrape.com`)은 사용하지 않았다.
 
 ## 4. 크롤 실행
@@ -178,21 +193,45 @@ curl -X POST http://localhost:11235/crawl \
 
 ## 크롤링 윤리 준수 사항
 
-- **요청 간격**: 페이지 사이에 2.5초 대기(`REQUEST_INTERVAL_SEC = 2.5`).
-  robots.txt에 `Crawl-delay`가 없어 자체 기준(2초 이상)을 정해 적용했다.
-- **수집 범위 제한**: 1~3페이지, 페이지당 15건까지만. 전체 아카이브를 훑지 않는다.
+- **robots.txt 자동 확인**: 수집 전 `robots_check.py` 가 대상 URL을 robots.txt 규칙과
+  대조하고 금지되면 중단한다. 원문·대상 URL은 `crawler/sites.json` 에서 읽는다.
+- **요청 간격**: 페이지 사이 기본 2.5초 대기(`crawler/sites.json` 의
+  `request_interval_sec`). robots.txt에 `Crawl-delay`가 없어 자체 기준(2초 이상)을 정해
+  적용했다.
+- **수집 범위 제한**: 1~3페이지, 페이지당 15건까지만(`sites.json` 의 `pages`·
+  `list_url_template`). 전체 아카이브를 훑지 않는다.
 - **Disallow 경로 미접근**: 공시 원문 뷰어(`/dsaf001/main.do`)와 기업개황 팝업
-  (`/dsae001/selectPopup.ax`)은 목록에 링크가 있어도 따라가지 않았다.
+  (`/dsae001/selectPopup.ax`)은 목록에 링크가 있어도 따라가지 않는다.
 - **동시 요청 없음**: 순차 실행. 병렬 요청을 보내지 않는다.
 - **캐시**: `cache_mode: BYPASS`는 crawl4ai 로컬 캐시를 끄는 옵션이며 재실행 시 불필요한
   재요청이 걱정된다면 이 값을 조정하는 편이 대상 서버에 더 낫다.
 - **공개 데이터만**: 로그인·인증이 필요한 영역은 건드리지 않았다.
+
+## 대상 사이트 설정 (sites.json)
+
+`crawler/crawl_dart.py` 는 코드에 URL 상수를 두지 않고 `crawler/sites.json` 에서 대상을
+읽어 크롤링한다. 다른 사이트를 추가하려면 `sites` 아래에 새 키를 넣고
+`python3 crawler/crawl_dart.py --site <키>` 로 실행하면 된다. 기본 `--site dart` 는 기존
+DART 목록과 동일하게 동작한다. `--config` 로 설정 파일 경로도 바꿀 수 있다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `label` | 실행 로그에 표시할 사이트 이름 |
+| `user_agent` | robots.txt `can_fetch` 판정에 쓸 사용자 에이전트 |
+| `robots_source` | robots.txt 원문의 로컬 파일 경로 또는 http(s) URL |
+| `list_url_template` | `{page}` 자리표를 가진 목록 URL 템플릿 |
+| `request_interval_sec` | 페이지 간 최소 대기(초) |
+| `pages` | 크롤할 페이지 번호 목록 |
+| `page_timeout`, `delay_before_return_html` | crawl4ai 렌더링 옵션 |
 
 ## 산출물 경로
 
 | 경로 | 내용 |
 | --- | --- |
 | `crawler/crawl_dart.py` | 수집 스크립트(표준 라이브러리만 사용) |
+| `crawler/robots_check.py` | robots.txt 자동 확인 모듈 |
+| `crawler/sites.json` | 대상 사이트 URL·robots·요청 간격 설정 |
+| `crawler/test_crawl_site.py` | robots 허용·거부, 설정 분리 테스트 |
 | `crawler/README.md` | 이 문서 |
 | `data/crawl/dart_page1.md` ~ `dart_page3.md` | 페이지별 마크다운 본문 |
 | `data/crawl/dart_page1.json` ~ `dart_page3.json` | 페이지별 메타데이터(상태코드, 수집시각, 접수번호 표본) |
