@@ -407,12 +407,6 @@ crawl4ai가 렌더링한 공시 목록을 마크다운 표로 변환한 결과. 
 같은 페이지를 `device_scale_factor=2` 로 다시 캡처해 재측정하니 **61.3% → 83.9%** 로
 올랐다. 다만 한 페이지 1회 측정이라 일반화는 **미검증**이다.
 
-**대상이 DART 두세 페이지에 고정돼 있다.** URL이 코드에 상수로 박혀 있어 다른 사이트를
-넣으려면 코드를 고쳐야 한다.
-
-**robots.txt를 자동으로 지키지 않는다.** 사람이 한 번 읽고 판단한 결과를 코드에 반영한
-방식이라, 대상이 늘거나 robots.txt가 바뀌면 사람이 다시 확인해야 한다.
-
 **crawl4ai 이미지만 버전 태그가 없다.** 다른 둘은 `v1.62.0-noble`, `5.5.2` 로 고정했지만
 crawl4ai는 `latest` 밖에 없어 이미지가 갱신되면 동작이 달라질 수 있다. 실행 중인 버전은
 0.9.2 였다.
@@ -465,9 +459,11 @@ Disallow: /html/search/SearchCompany_M2.html
 - 로그인·인증이 필요한 영역은 건드리지 않는다. 공개 페이지만 대상으로 한다.
 - OCR 단계는 네트워크 요청이 전혀 없다. 이미 받아둔 PNG만 읽는다.
 
-정직하게 덧붙이면, 이 파이프라인은 **robots.txt를 코드로 파싱해 자동으로 지키지 않는다.**
-사람이 한 번 읽고 대상 URL을 직접 골라 넣는 방식이다. 대상이 늘어나면 자동 확인이
-필요하며 로드맵에 넣어두었다.
+정직하게 덧붙이면, 위 robots.txt 확인은 이제 **코드로 자동화**되어 있다. `crawler/robots_check.py`
+가 표준 `urllib.robotparser` 로 대상 URL이 robots.txt 규칙에 허용되는지 검사하고, 하나라도
+금지면 크롤링을 시작하지 않고 중단한다. 원문은 로컬 파일(기본 `evidence/dart_robots.txt`)이나
+실시간 `/robots.txt` URL에서 얻는다. 대상 사이트가 늘거나 robots.txt가 바뀌면
+`crawler/sites.json` 과 원문 파일만 갱신하면 된다.
 
 ## 공식 API 대안
 
@@ -522,9 +518,10 @@ DART OPEN API 쪽이 낫고 상당수 공급자는 별도 API 키와 유료 플�
       아직 시도하지 않았다.
 - [ ] **`--psm` 페이지 분할 모드 튜닝**: 현재는 기본값을 쓴다. 표 위주 화면에서 다른 모드가
       나은지 확인하지 않았다.
-- [ ] **robots.txt 자동 확인**: 수집 전 `robots.txt` 를 파싱해 대상 URL이 허용되는지 코드로
-      검사하고 거부되면 중단.
-- [ ] **대상 URL 설정 분리**: 코드 상수로 박힌 URL을 설정 파일로 빼 다른 사이트에도 적용.
+- [x] **robots.txt 자동 확인**: 수집 전 `robots.txt` 를 파싱해 대상 URL이 허용되는지 코드로
+      검사하고 거부되면 중단. ([`crawler/robots_check.py`](crawler/robots_check.py))
+- [x] **대상 URL 설정 분리**: 코드 상수로 박힌 URL을 설정 파일로 빼 다른 사이트에도 적용.
+      ([`crawler/sites.json`](crawler/sites.json))
 - [x] **DART OPEN API 경로 병행**: 공식 API로 얻을 수 있는 항목은 API로 받고 이 파이프라인은
       API가 닿지 않는 표면만 담당하도록 역할 분리. ([`api/`](api/) 참고)
 - [ ] **산출물 보관 정책**: 오래된 실행 결과 정리 규칙.
@@ -536,7 +533,10 @@ DART OPEN API 쪽이 낫고 상당수 공급자는 별도 API 키와 유료 플�
 ├── run_pipeline.sh          # 3단계 순차 실행 (주 진입점)
 ├── docker-compose.yml       # 같은 파이프라인의 compose 정의
 ├── crawler/                 # 1단계: crawl4ai
-│   ├── crawl_dart.py
+│   ├── crawl_dart.py        #   수집 스크립트 (대상 URL은 설정 파일에서)
+│   ├── robots_check.py      #   robots.txt 자동 확인 (표준 urllib.robotparser)
+│   ├── sites.json           #   대상 사이트 URL·robots·요청 간격 설정
+│   ├── test_crawl_site.py   #   robots 허용·거부, 설정 분리 테스트
 │   └── README.md
 ├── capture/                 # 2단계: Playwright
 │   ├── capture.py
